@@ -1,22 +1,30 @@
-// App.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Provider as PaperProvider } from 'react-native-paper'; // 
+import { Provider as PaperProvider } from 'react-native-paper';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import SplashScreen from './screens/SplashScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
+import AboutUsScreen from './screens/AboutUsScreen';
 import NotificationScreen from './screens/NotificationScreen';
 
 import CustomerDashboardScreen from './screens/CustomerDashboardScreen';
 import TripSearchScreen from './screens/TripSearchScreen';
 import WalletScreen from './screens/WalletScreen';
 import TrackScreen from './screens/TrackScreen';
+import PackageInfoScreen from './screens/PackageInfoScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import SearchResultsScreen from './screens/SearchResultsScreen';
+import InstantBookingScreen from './screens/InstantBookingScreen';
+import InstantResultsScreen from './screens/InstantResultsScreen';
+import CustomerEditProfileScreen from './screens/CustomerEditProfileScreen';
+import CustomerMyBookingScreen from './screens/CustomerMyBookingScreen';
+import CustomerBookingEditScreen from './screens/CustomerBookingEditScreen'; // adjust the path if needed
+
 
 import VehicleOwnerTabs from './screens/VehicleOwnerTabs';
 import VehicleManagementScreen from './screens/VehicleManagementScreen';
@@ -24,11 +32,12 @@ import AddVehicleScreen from './screens/AddVehicleScreen';
 import TripManagementScreen from './screens/TripManagementScreen';
 import AddTripScreen from './screens/AddTripScreen';
 import OwnerBookingsScreen from './screens/OwnerBookingsScreen';
+import VehicleOwnerEditProfileScreen from './screens/VehicleOwnerEditProfileScreen';
+
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { BRAND_COLOR } from './screens/config';
-
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -89,28 +98,42 @@ const CustomerTabs = () => (
 
 export default function App() {
   return (
-    <PaperProvider> 
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Splash" component={SplashScreen} />
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Signup" component={SignupScreen} />
-          <Stack.Screen name="Notifications" component={NotificationScreen} />
-          <Stack.Screen name="Dashboard" component={CustomerTabs} />
-          <Stack.Screen name="TripSearch" component={TripSearchScreen} options={{ title: 'Search Trips' }} />
-          <Stack.Screen name="OwnerDashboard" component={VehicleOwnerTabs} />
-          <Stack.Screen name="VehicleManagement" component={VehicleManagementScreen} />
-          <Stack.Screen name="AddVehicle" component={AddVehicleScreen} />
-          <Stack.Screen name="TripManagement" component={TripManagementScreen} />
-          <Stack.Screen name="AddTrip" component={AddTripScreen} />
-          <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
-          <Tab.Screen name="OwnerBookings" component={OwnerBookingsScreen} />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PaperProvider>
+        <SafeAreaProvider>
+          <NavigationContainer>
+            <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="Splash" component={SplashScreen} />
+              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Signup" component={SignupScreen} />
+              <Stack.Screen name="Notifications" component={NotificationScreen} />
+              <Stack.Screen name="AboutUs" component={AboutUsScreen} />
 
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SafeAreaProvider>
-    </PaperProvider> 
+
+              <Stack.Screen name="Dashboard" component={CustomerTabs} />
+              <Stack.Screen name="TripSearch" component={TripSearchScreen} />
+              <Stack.Screen name="InstantBooking" component={InstantBookingScreen} />
+              <Stack.Screen name="InstantResults" component={InstantResultsScreen} />
+              <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
+              <Stack.Screen name="PackageInfoScreen" component={PackageInfoScreen} />
+              <Stack.Screen name="CustomerEditProfile" component={CustomerEditProfileScreen} />
+              <Stack.Screen name="MyBookings" component={CustomerMyBookingScreen} />
+              <Stack.Screen name="EditBooking" component={CustomerBookingEditScreen} />
+
+
+              <Stack.Screen name="OwnerDashboard" component={VehicleOwnerTabs} />
+              <Stack.Screen name="VehicleManagement" component={VehicleManagementScreen} />
+              <Stack.Screen name="AddVehicle" component={AddVehicleScreen} />
+              <Stack.Screen name="TripManagement" component={TripManagementScreen} />
+              <Stack.Screen name="AddTrip" component={AddTripScreen} />
+              <Stack.Screen name="OwnerBookings" component={OwnerBookingsScreen} />
+              <Stack.Screen name="VehicleOwnerEditProfile" component={VehicleOwnerEditProfileScreen} />
+
+            </Stack.Navigator>
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </PaperProvider>
+    </GestureHandlerRootView>
   );
 }

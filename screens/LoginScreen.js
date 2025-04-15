@@ -1,5 +1,4 @@
-// screens/LoginScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  Image,
+  ActivityIndicator,
+  Animated,
 } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -19,6 +19,9 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const shakeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const loadSaved = async () => {
@@ -33,7 +36,36 @@ const LoginScreen = ({ navigation }) => {
     loadSaved();
   }, []);
 
+  const triggerShake = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const validate = () => {
+    let newErrors = {};
+    if (!email) newErrors.email = 'Email is required';
+    else if (!email.includes('@')) newErrors.email = 'Invalid email address';
+
+    if (!password) newErrors.password = 'Password is required';
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      triggerShake();
+      return false;
+    }
+
+    return true;
+  };
+
   const handleLogin = async () => {
+    if (!validate()) return;
+
+    setLoading(true);
     try {
       const response = await axios.post(`${BACKEND_URL}/login`, {
         email,
@@ -55,15 +87,15 @@ const LoginScreen = ({ navigation }) => {
 
       Alert.alert('Success', 'Logged in successfully!');
 
-      // Navigate based on role
       if (user.role === 'customer') {
         navigation.replace('Dashboard');
       } else if (user.role === 'vehicle_owner') {
         navigation.replace('OwnerDashboard');
       }
-
     } catch (error) {
       Alert.alert('Login Failed', error.response?.data?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -72,31 +104,41 @@ const LoginScreen = ({ navigation }) => {
       <Text style={styles.title}>Welcome Back</Text>
       <Text style={styles.subtitle}>Fill in your email and password to continue</Text>
 
-      <Text style={styles.label}>Email Address</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="example@gmail.com"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        placeholderTextColor="#999"
-      />
-
-      <Text style={styles.label}>Password</Text>
-      <View style={styles.passwordContainer}>
+      <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+        <Text style={styles.label}>Email Address</Text>
         <TextInput
-          style={styles.inputPassword}
-          placeholder="********"
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
+          style={styles.input}
+          placeholder="example@gmail.com"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            setErrors({ ...errors, email: null });
+          }}
+          autoCapitalize="none"
+          keyboardType="email-address"
           placeholderTextColor="#999"
         />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <Icon name={showPassword ? 'eye-off' : 'eye'} size={20} color="#777" />
-        </TouchableOpacity>
-      </View>
+        {errors.email && <Text style={styles.error}>{errors.email}</Text>}
+
+        <Text style={styles.label}>Password</Text>
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.inputPassword}
+            placeholder="********"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              setErrors({ ...errors, password: null });
+            }}
+            placeholderTextColor="#999"
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Icon name={showPassword ? 'eye-off' : 'eye'} size={20} color="#777" />
+          </TouchableOpacity>
+        </View>
+        {errors.password && <Text style={styles.error}>{errors.password}</Text>}
+      </Animated.View>
 
       <View style={styles.row}>
         <TouchableOpacity
@@ -114,8 +156,12 @@ const LoginScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginButtonText}>Log in</Text>
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.loginButtonText}>Log in</Text>
+        )}
       </TouchableOpacity>
 
       <View style={styles.signupRow}>
@@ -140,9 +186,15 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 10,
     fontSize: 15,
     color: '#000',
+  },
+  error: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 4,
   },
   passwordContainer: {
     flexDirection: 'row',
@@ -151,7 +203,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   inputPassword: {
     flex: 1,

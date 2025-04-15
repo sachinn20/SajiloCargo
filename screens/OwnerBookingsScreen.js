@@ -32,7 +32,7 @@ const OwnerBookingsScreen = () => {
   const fetchBookings = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const res = await axios.get('/my-bookings', {
+      const res = await axios.get('/received-bookings',{
         headers: { Authorization: `Bearer ${token}` },
       });
       setBookings(res.data);
@@ -118,6 +118,9 @@ const OwnerBookingsScreen = () => {
 
             <Text style={styles.modalLabel}>Packages</Text>
             <Text style={styles.modalValue}>{selectedBooking?.no_of_packages}</Text>
+
+            <Text style={styles.modalLabel}>Sender</Text>
+            <Text style={styles.modalValue}>{selectedBooking?.user.name} ({selectedBooking?.user.phone_number})</Text>
 
             <Text style={styles.modalLabel}>Receiver</Text>
             <Text style={styles.modalValue}>{selectedBooking?.receiver_name} ({selectedBooking?.receiver_number})</Text>

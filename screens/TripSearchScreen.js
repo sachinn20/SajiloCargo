@@ -31,17 +31,24 @@ const TripSearchScreen = ({ navigation }) => {
       Alert.alert('Error', 'Please fill all required fields.');
       return;
     }
-
+  
+    const searchPayload = {
+      from_location: fromLocation,
+      to_location: toLocation,
+      date: date.toISOString().split('T')[0],
+      shipment_type: shipmentType,
+    };
+  
+    // Add capacity filter only if weight is provided and valid
+    if (weight && !isNaN(parseFloat(weight))) {
+      searchPayload.capacity = parseFloat(weight);
+    }
+  
     try {
-      const response = await axios.post('/trips/search', {
-        from_location: fromLocation,
-        to_location: toLocation,
-        date: date.toISOString().split('T')[0],
-        shipment_type: shipmentType,
-        capacity: weight
-        
-      });
-
+      const response = await axios.post('/trips/search', searchPayload);
+  
+      console.log('Trips from backend:', response.data); // Debug
+  
       navigation.navigate('SearchResults', {
         trips: response.data,
         packageDetails: {
@@ -54,14 +61,14 @@ const TripSearchScreen = ({ navigation }) => {
           noOfPackages,
           receiverName,
           receiverNumber
-     
         }
       });
     } catch (err) {
-      console.log(err);
+      console.log('Trip search error:', err?.response?.data || err.message);
       Alert.alert('Error', 'No matching trips found or failed to search.');
     }
   };
+  
 
   const handleDateChange = (event, selectedDate) => {
     if (selectedDate) {

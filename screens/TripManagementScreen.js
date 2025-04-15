@@ -2,15 +2,31 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, Alert,
-  StyleSheet, ActivityIndicator, TextInput, ScrollView, Platform
+  StyleSheet, ActivityIndicator, TextInput, ScrollView
 } from 'react-native';
-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from '../utils/axiosInstance';
 import { BRAND_COLOR } from './config';
 import { useFocusEffect } from '@react-navigation/native';
+
+const STATUS_OPTIONS = [
+  'pending', 'scheduled', 'loading', 'en_route',
+  'delayed', 'arrived', 'unloading', 'completed', 'cancelled'
+];
+
+const STATUS_COLORS = {
+  pending: '#888',
+  scheduled: '#8080ff',
+  loading: '#ff9900',
+  en_route: '#1e90ff',
+  delayed: '#ffcc00',
+  arrived: '#6a5acd',
+  unloading: '#9932cc',
+  completed: '#4caf50',
+  cancelled: '#f44336'
+};
 
 const TripManagementScreen = ({ navigation }) => {
   const [trips, setTrips] = useState([]);
@@ -23,6 +39,8 @@ const TripManagementScreen = ({ navigation }) => {
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [selectedTripForStatus, setSelectedTripForStatus] = useState(null);
 
   const fetchTrips = async () => {
     try {
@@ -42,17 +60,28 @@ const TripManagementScreen = ({ navigation }) => {
     }, [])
   );
 
+  const updateTripStatus = async (tripId, status) => {
+    try {
+      await axios.post('/trips/update-status', { trip_id: tripId, status });
+      setStatusModalVisible(false);
+      setSelectedTripForStatus(null);
+      fetchTrips();
+    } catch (error) {
+      console.log("Trip status update error:", error.response?.data || error.message);
+      Alert.alert('Error', 'Failed to update status');
+    }
+  };
+
   const deleteTrip = async (id) => {
-    Alert.alert('Confirm', 'Are you sure you want to delete this trip?', [
+    Alert.alert('Confirm', 'Delete this trip?', [
       { text: 'Cancel' },
       {
-        text: 'Delete',
-        onPress: async () => {
+        text: 'Delete', onPress: async () => {
           try {
             await axios.delete(`/trips/${id}`);
             fetchTrips();
-          } catch (error) {
-            Alert.alert('Error', 'Could not delete trip.');
+          } catch {
+            Alert.alert('Error', 'Delete failed.');
           }
         },
       },
@@ -64,8 +93,8 @@ const TripManagementScreen = ({ navigation }) => {
     setEditFields({
       from_location: trip.from_location,
       to_location: trip.to_location,
-      date: trip.date || new Date().toISOString().split('T')[0],
-      time: trip.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+      date: trip.date,
+      time: trip.time,
       shipment_type: trip.shipment_type,
       available_capacity: trip.available_capacity?.toString() || '',
     });
@@ -76,34 +105,20 @@ const TripManagementScreen = ({ navigation }) => {
     try {
       await axios.put(`/trips/${editingTrip.id}`, editFields);
       setEditModalVisible(false);
-      setEditingTrip(null);
       fetchTrips();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update trip.');
+    } catch {
+      Alert.alert('Error', 'Update failed.');
     }
   };
 
   const getSafeTime = (timeString) => {
+    const date = new Date();
     try {
-      if (!timeString || typeof timeString !== 'string') throw new Error('Invalid');
-
-      const date = new Date('2000-01-01');
-      const [timePart, modifier] = timeString.split(' ');
-      let [hours, minutes] = timePart.split(':').map(Number);
-
-      if (modifier) {
-        if (modifier.toLowerCase() === 'pm' && hours < 12) hours += 12;
-        if (modifier.toLowerCase() === 'am' && hours === 12) hours = 0;
-      }
-
-      if (isNaN(hours) || isNaN(minutes)) throw new Error('Invalid time numbers');
-
-      date.setHours(hours);
-      date.setMinutes(minutes);
-      date.setSeconds(0);
+      const [h, m] = timeString.split(':');
+      date.setHours(Number(h), Number(m));
       return date;
-    } catch (e) {
-      return new Date();
+    } catch {
+      return date;
     }
   };
 
@@ -111,7 +126,7 @@ const TripManagementScreen = ({ navigation }) => {
   const safeTime = getSafeTime(editFields.time);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back-outline" size={24} color={BRAND_COLOR} />
@@ -127,13 +142,36 @@ const TripManagementScreen = ({ navigation }) => {
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View style={styles.tripCard}>
-              <Text style={styles.tripTitle}>{item.from_location} → {item.to_location}</Text>
+              <View style={styles.tripHeaderRow}>
+                <Text style={styles.tripTitle}>{item.from_location} → {item.to_location}</Text>
+                <TouchableOpacity onPress={() => {
+                  if (item.status !== 'completed') {
+                    setSelectedTripForStatus(item);
+                    setStatusModalVisible(true);
+                  } else {
+                    Alert.alert('Action Blocked', 'Trip is already completed and cannot be changed.');
+                  }
+                }}>
+                  <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] || '#ccc' }]}>
+                    <Text style={styles.statusText}>{item.status}</Text>
+                    <Ionicons name="chevron-down" size={16} color="#fff" />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
               <Text style={styles.tripDetails}>{item.date} at {item.time} | {item.shipment_type.toUpperCase()}</Text>
               <Text style={styles.tripDetails}>Capacity: {item.available_capacity} tons</Text>
               <Text style={styles.tripDetails}>Vehicle: {item.vehicle_name} ({item.vehicle_plate})</Text>
               <Text style={styles.tripDetails}>Owner: {item.owner_name}</Text>
+
               <View style={styles.actions}>
-                <TouchableOpacity onPress={() => openEditModal(item)} style={{ marginRight: 10 }}>
+                <TouchableOpacity onPress={() => {
+                  if (item.status === 'completed') {
+                    Alert.alert('Action Blocked', 'Completed trips cannot be edited.');
+                  } else {
+                    openEditModal(item);
+                  }
+                }} style={{ marginRight: 10 }}>
                   <Ionicons name="create-outline" size={20} color={BRAND_COLOR} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => deleteTrip(item.id)}>
@@ -145,16 +183,13 @@ const TripManagementScreen = ({ navigation }) => {
         />
       )}
 
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate('AddTrip')}
-      >
+      <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddTrip')}>
         <Ionicons name="add-circle-outline" size={24} color="#fff" />
         <Text style={styles.addButtonText}>Add Trip</Text>
       </TouchableOpacity>
 
       {editModalVisible && (
-        <SafeAreaView style={styles.modal} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={styles.modal}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
               <TouchableOpacity onPress={() => setEditModalVisible(false)}>
@@ -221,11 +256,26 @@ const TripManagementScreen = ({ navigation }) => {
           </ScrollView>
         </SafeAreaView>
       )}
+
+      {statusModalVisible && selectedTripForStatus && (
+        <SafeAreaView style={styles.statusModal}>
+          <Text style={styles.modalTitle}>Change Trip Status</Text>
+          {STATUS_OPTIONS.map((status) => (
+            <TouchableOpacity key={status} onPress={() => updateTripStatus(selectedTripForStatus.id, status)} style={styles.statusOption}>
+              <View style={[styles.statusBadgeSmall, { backgroundColor: STATUS_COLORS[status] }]}>
+                <Text style={styles.statusTextSmall}>{status}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity onPress={() => setStatusModalVisible(false)}>
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      )}
+
     </SafeAreaView>
   );
 };
-
-export default TripManagementScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 20 },
@@ -233,7 +283,16 @@ const styles = StyleSheet.create({
   backButton: { marginRight: 12 },
   title: { fontSize: 22, fontWeight: 'bold' },
   tripCard: { backgroundColor: '#f6f6f6', borderRadius: 10, padding: 16, marginBottom: 12 },
-  tripTitle: { fontSize: 16, fontWeight: 'bold' },
+  tripHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  tripTitle: { fontSize: 16, fontWeight: 'bold', flex: 1 },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+  },
+  statusText: { color: '#fff', fontSize: 12, marginRight: 4, textTransform: 'capitalize' },
   tripDetails: { fontSize: 13, color: '#555', marginTop: 4 },
   actions: { flexDirection: 'row', marginTop: 10 },
   addButton: {
@@ -259,5 +318,39 @@ const styles = StyleSheet.create({
     borderRadius: 8, alignItems: 'center', marginTop: 20
   },
   buttonText: { color: '#fff', fontWeight: 'bold' },
-  picker: { marginBottom: 12 },
+  statusModal: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    padding: 20,
+    paddingBottom: 10,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  statusOption: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    alignItems: 'flex-start'
+  },
+  statusBadgeSmall: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  statusTextSmall: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textTransform: 'capitalize',
+  },
+  cancelText: { textAlign: 'center', color: 'red', marginTop: 12, fontWeight: 'bold' },
 });
+
+export default TripManagementScreen;

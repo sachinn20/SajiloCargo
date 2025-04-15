@@ -1,3 +1,4 @@
+// === Updated VehicleManagementScreen.js with styled Edit Modal ===
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -23,7 +24,6 @@ const VehicleManagementScreen = () => {
 
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editVehicle, setEditVehicle] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -48,18 +48,14 @@ const VehicleManagementScreen = () => {
   };
 
   useEffect(() => {
-    if (isFocused) {
-      fetchVehicles();
-    }
+    if (isFocused) fetchVehicles();
   }, [isFocused]);
 
   const handleDelete = (id) => {
     Alert.alert('Delete Vehicle', 'Are you sure you want to delete this vehicle?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
+        text: 'Delete', style: 'destructive', onPress: async () => {
           try {
             await axios.delete(`/vehicles/${id}`);
             Alert.alert('Deleted', 'Vehicle has been deleted.');
@@ -68,7 +64,7 @@ const VehicleManagementScreen = () => {
             console.log(error);
             Alert.alert('Error', 'Could not delete the vehicle.');
           }
-        },
+        }
       },
     ]);
   };
@@ -91,11 +87,9 @@ const VehicleManagementScreen = () => {
 
   const handleEditSubmit = async () => {
     if (!editVehicle) return;
-
     if (!editForm.type || !editForm.capacity || !editForm.plate || !editForm.license) {
       return Alert.alert('Validation', 'All required fields must be filled.');
     }
-
     try {
       await axios.put(`/vehicles/${editVehicle.id}`, editForm);
       Alert.alert('Updated', 'Vehicle updated successfully.');
@@ -118,9 +112,7 @@ const VehicleManagementScreen = () => {
           {item.insurance ? (
             <Text style={styles.vehicleSub}>Insurance: {item.insurance}</Text>
           ) : (
-            <Text style={[styles.vehicleSub, { fontStyle: 'italic', color: 'gray' }]}>
-              No insurance info
-            </Text>
+            <Text style={[styles.vehicleSub, { fontStyle: 'italic', color: 'gray' }]}>No insurance info</Text>
           )}
         </View>
         <View style={{ justifyContent: 'space-between' }}>
@@ -147,9 +139,7 @@ const VehicleManagementScreen = () => {
       {loading ? (
         <ActivityIndicator size="large" color={BRAND_COLOR} />
       ) : vehicles.length === 0 ? (
-        <Text style={{ color: '#888', textAlign: 'center', marginTop: 20 }}>
-          No vehicles found.
-        </Text>
+        <Text style={{ color: '#888', textAlign: 'center', marginTop: 20 }}>No vehicles found.</Text>
       ) : (
         <FlatList
           data={vehicles}
@@ -167,46 +157,31 @@ const VehicleManagementScreen = () => {
         <Text style={styles.addButtonText}>Add Vehicle</Text>
       </TouchableOpacity>
 
-      {/* ✅ EDIT VEHICLE MODAL */}
+      {/* ✅ STYLED EDIT VEHICLE MODAL */}
       <Modal visible={editModalVisible} animationType="slide">
         <SafeAreaView style={styles.modalContainer}>
-          <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
-            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-              <Ionicons name="close-outline" size={28} color="black" />
-            </TouchableOpacity>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 30 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)} style={{ marginRight: 12 }}>
+                <Ionicons name="arrow-back-outline" size={24} color={BRAND_COLOR} />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Edit Vehicle</Text>
+            </View>
 
-            <Text style={styles.modalTitle}>Edit Vehicle</Text>
+            <Text style={styles.label}>Vehicle Type</Text>
+            <TextInput style={styles.input} placeholder="e.g. Truck" value={editForm.type} onChangeText={(text) => handleEditChange('type', text)} />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Type"
-              value={editForm.type}
-              onChangeText={(text) => handleEditChange('type', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Capacity"
-              value={editForm.capacity}
-              onChangeText={(text) => handleEditChange('capacity', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Plate"
-              value={editForm.plate}
-              onChangeText={(text) => handleEditChange('plate', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="License"
-              value={editForm.license}
-              onChangeText={(text) => handleEditChange('license', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Insurance (optional)"
-              value={editForm.insurance}
-              onChangeText={(text) => handleEditChange('insurance', text)}
-            />
+            <Text style={styles.label}>Capacity (kg)</Text>
+            <TextInput style={styles.input} placeholder="e.g. 1000" keyboardType="numeric" value={editForm.capacity} onChangeText={(text) => handleEditChange('capacity', text)} />
+
+            <Text style={styles.label}>Plate Number</Text>
+            <TextInput style={styles.input} placeholder="e.g. BA 2 PA 1234" value={editForm.plate} onChangeText={(text) => handleEditChange('plate', text)} />
+
+            <Text style={styles.label}>License Number</Text>
+            <TextInput style={styles.input} placeholder="Transport license ID" value={editForm.license} onChangeText={(text) => handleEditChange('license', text)} />
+
+            <Text style={styles.label}>Insurance (optional)</Text>
+            <TextInput style={styles.input} placeholder="Insurance Number" value={editForm.insurance} onChangeText={(text) => handleEditChange('insurance', text)} />
 
             <TouchableOpacity style={styles.saveButton} onPress={handleEditSubmit}>
               <Text style={styles.saveButtonText}>Save Changes</Text>
@@ -222,66 +197,30 @@ export default VehicleManagementScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 20 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginLeft: 12,
-    color: BRAND_COLOR,
-  },
-  vehicleCard: {
-    backgroundColor: '#f6f6f6',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  title: { fontSize: 22, fontWeight: 'bold', marginLeft: 12, color: BRAND_COLOR },
+  vehicleCard: { backgroundColor: '#f6f6f6', borderRadius: 10, padding: 16, marginBottom: 12 },
   vehicleText: { fontSize: 16, fontWeight: 'bold' },
   vehicleSub: { fontSize: 13, color: '#555', marginTop: 4 },
   addButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 30,
+    position: 'absolute', right: 20, bottom: 30,
     backgroundColor: BRAND_COLOR,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 30,
-    elevation: 6,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderRadius: 30, elevation: 6,
   },
   addButtonText: { color: '#fff', marginLeft: 8, fontWeight: '600' },
-
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: BRAND_COLOR,
-    marginVertical: 20,
-  },
+  modalContainer: { flex: 1, backgroundColor: '#fff', padding: 20 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', color: BRAND_COLOR, marginVertical: 10 },
+  label: { fontWeight: '600', marginBottom: 4, marginTop: 10, color: '#333' },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
+    borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
+    padding: 12, marginBottom: 12, backgroundColor: '#f9f9f9',
   },
   saveButton: {
     backgroundColor: BRAND_COLOR,
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
+    padding: 14, borderRadius: 8,
+    alignItems: 'center', marginTop: 20
   },
-  saveButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+  saveButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
