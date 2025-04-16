@@ -155,7 +155,7 @@ const AddVehicleScreen = () => {
             {/* Submit Button */}
             <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
               <Text style={styles.buttonText}>
-                {loading ? 'Adding...' : 'Submit'}
+                {loading ? 'Adding...' : 'Add Vehicle'}
               </Text>
             </TouchableOpacity>
           </ScrollView>

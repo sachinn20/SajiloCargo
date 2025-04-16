@@ -37,7 +37,7 @@ const OpenStreetMapAutocomplete = ({ placeholder, onSelect }) => {
       );
       setResults(response.data);
     } catch (error) {
-      Alert.alert('Error', 'Failed to fetch locations in Nepal');
+      // Alert.alert('Error', 'Failed to fetch locations in Nepal');
     }
   };
 
@@ -50,28 +50,30 @@ const OpenStreetMapAutocomplete = ({ placeholder, onSelect }) => {
         onChangeText={searchLocations}
       />
       {results.length > 0 && (
-        <FlatList
-          nestedScrollEnabled={true}
-          data={results}
-          keyExtractor={(item) => item.place_id.toString()}
-          renderItem={({ item }) => (
+        <ScrollView
+          style={{ maxHeight: 150 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {results.map((item) => (
             <TouchableOpacity
+              key={item.place_id}
               style={styles.suggestion}
               onPress={() => {
-                const city = item.display_name.split(',')[0].trim(); // 👈 Extract city only
-                onSelect(city);             // send only city to parent
-                setQuery(city);             // show city in input
+                const city = item.display_name.split(',')[0].trim();
+                onSelect(city);
+                setQuery(city);
                 setResults([]);
-              }}              
+              }}
             >
               <Text>{item.display_name}</Text>
             </TouchableOpacity>
-          )}
-        />
+          ))}
+        </ScrollView>
       )}
     </View>
   );
 };
+
 
 const AddTripScreen = ({ navigation }) => {
   const [vehicles, setVehicles] = useState([]);
