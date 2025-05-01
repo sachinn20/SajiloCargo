@@ -145,11 +145,11 @@ const TripManagementScreen = ({ navigation }) => {
               <View style={styles.tripHeaderRow}>
                 <Text style={styles.tripTitle}>{item.from_location} → {item.to_location}</Text>
                 <TouchableOpacity onPress={() => {
-                  if (item.status !== 'completed') {
+                  if (item.status !== 'completed' && item.status !== 'cancelled') {
                     setSelectedTripForStatus(item);
                     setStatusModalVisible(true);
                   } else {
-                    Alert.alert('Action Blocked', 'Trip is already completed and cannot be changed.');
+                    Alert.alert('Action Blocked', 'Trip status cannot be changed.');
                   }
                 }}>
                   <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] || '#ccc' }]}>
@@ -168,6 +168,7 @@ const TripManagementScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => {
                   if (item.status === 'completed') {
                     Alert.alert('Action Blocked', 'Completed trips cannot be edited.');
+                    
                   } else {
                     openEditModal(item);
                   }

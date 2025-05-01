@@ -9,6 +9,9 @@ import SplashScreen from './screens/SplashScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
+
 import AboutUsScreen from './screens/AboutUsScreen';
 import NotificationScreen from './screens/NotificationScreen';
 
@@ -33,7 +36,6 @@ import TripManagementScreen from './screens/TripManagementScreen';
 import AddTripScreen from './screens/AddTripScreen';
 import OwnerBookingsScreen from './screens/OwnerBookingsScreen';
 import VehicleOwnerEditProfileScreen from './screens/VehicleOwnerEditProfileScreen';
-
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -107,6 +109,11 @@ export default function App() {
               <Stack.Screen name="Onboarding" component={OnboardingScreen} />
               <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Signup" component={SignupScreen} />
+              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+
+
+
               <Stack.Screen name="Notifications" component={NotificationScreen} />
               <Stack.Screen name="AboutUs" component={AboutUsScreen} />
 
@@ -129,6 +136,8 @@ export default function App() {
               <Stack.Screen name="AddTrip" component={AddTripScreen} />
               <Stack.Screen name="OwnerBookings" component={OwnerBookingsScreen} />
               <Stack.Screen name="VehicleOwnerEditProfile" component={VehicleOwnerEditProfileScreen} />
+              
+
 
             </Stack.Navigator>
           </NavigationContainer>

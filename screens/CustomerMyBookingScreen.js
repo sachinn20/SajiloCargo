@@ -176,10 +176,7 @@ const CustomerMyBookingScreen = ({ navigation }) => {
               style={[styles.filterBtn, activeFilter === f && styles.filterActive]}
               onPress={() => setActiveFilter(f)}
             >
-              <Text style={[
-                styles.filterText,
-                activeFilter === f && { color: '#fff', fontWeight: 'bold' }
-              ]}>{f}</Text>
+              <Text style={[styles.filterText, activeFilter === f && { color: '#fff', fontWeight: 'bold' }]}>{f}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -198,15 +195,39 @@ const CustomerMyBookingScreen = ({ navigation }) => {
               }}
               renderRightActions={() => renderRightActions(item)}
             >
-              <TouchableOpacity
-                style={styles.card}
-                onPress={() => openDetailModal(item)}
-              >
-                <Text style={styles.title}>{item.trip?.from_location} ➔ {item.trip?.to_location}</Text>
-                <Text style={styles.sub}>Tracking No: {item.tracking_no}</Text>
-                <Text style={styles.sub}>Receiver: {item.receiver_name}</Text>
-                <Text style={styles.status}>Status: {item.status}</Text>
-              </TouchableOpacity>
+              <View style={styles.card}>
+                <TouchableOpacity
+                  style={styles.cardContent}
+                  onPress={() => openDetailModal(item)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.title}>{item.trip?.from_location} ➔ {item.trip?.to_location}</Text>
+                    <Text style={styles.sub}>Tracking No: {item.tracking_no}</Text>
+                    <Text style={styles.sub}>Receiver: {item.receiver_name}</Text>
+                    <Text style={styles.status}>Status: {item.status}</Text>
+                  </View>
+
+                  {item.is_paid ? (
+                    <View style={styles.paidBadge}>
+                      <Text style={styles.paidText}>
+                        {item.payment_mode === 'cash' ? 'Cash on Delivery' : 'Paid'}
+                      </Text>
+                    </View>
+                  ) : (
+                    (item.status !== 'pending' && item.status !== 'rejected' && item.status !== 'cancelled') && (
+                      <TouchableOpacity
+                        style={styles.payNowButton}
+                        onPress={() =>
+                          navigation.navigate('PaymentOptions', { bookingId: item.id })
+                        }
+                      >
+                        <Text style={styles.payNowText}>Pay Now</Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+
+                </TouchableOpacity>
+              </View>
             </Swipeable>
           )}
           contentContainerStyle={{ padding: 16 }}
@@ -226,54 +247,30 @@ const CustomerMyBookingScreen = ({ navigation }) => {
 export default CustomerMyBookingScreen;
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 16, backgroundColor: '#fff', elevation: 2,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', elevation: 2 },
   headerTitle: { fontSize: 18, fontWeight: '600' },
-  filterBar: {
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  filterBtn: {
-    paddingHorizontal: 14, paddingVertical: 6, backgroundColor: '#eee',
-    borderRadius: 20, marginRight: 10,
-  },
+  filterBar: { backgroundColor: '#f5f5f5', paddingVertical: 10, paddingHorizontal: 12 },
+  filterBtn: { paddingHorizontal: 14, paddingVertical: 6, backgroundColor: '#eee', borderRadius: 20, marginRight: 10 },
   filterText: { color: '#333', fontSize: 14 },
   filterActive: { backgroundColor: BRAND_COLOR },
-  card: {
-    backgroundColor: '#f9f9f9', padding: 16, borderRadius: 12,
-    marginBottom: 16, elevation: 1,
-  },
+  card: { backgroundColor: '#f9f9f9', padding: 16, borderRadius: 12, marginBottom: 16, elevation: 1 },
   title: { fontSize: 16, fontWeight: '600', color: '#222' },
   sub: { fontSize: 14, color: '#555', marginTop: 4 },
-  status: {
-    marginTop: 6, fontSize: 14, fontWeight: '500',
-    color: BRAND_COLOR, textTransform: 'capitalize'
-  },
-  swipeActions: {
-    flexDirection: 'row', height: '90%', marginVertical: 5
-  },
-  swipeBtn: {
-    justifyContent: 'center', alignItems: 'center',
-    width: 75, borderRadius: 8, marginHorizontal: 4,
-  },
-  swipeText: {
-    color: '#fff', fontWeight: '600', fontSize: 12, marginTop: 2
-  },
-  modalOverlay: {
-    flex: 1, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)'
-  },
-  detailBox: {
-    width: '90%', maxHeight: '85%', backgroundColor: '#fff', borderRadius: 12,
-    padding: 20, elevation: 5,
-  },
+  status: { marginTop: 6, fontSize: 14, fontWeight: '500', color: BRAND_COLOR, textTransform: 'capitalize' },
+  swipeActions: { flexDirection: 'row', height: '90%', marginVertical: 5 },
+  swipeBtn: { justifyContent: 'center', alignItems: 'center', width: 75, borderRadius: 8, marginHorizontal: 4 },
+  swipeText: { color: '#fff', fontWeight: '600', fontSize: 12, marginTop: 2 },
+  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  detailBox: { width: '90%', maxHeight: '85%', backgroundColor: '#fff', borderRadius: 12, padding: 20, elevation: 5 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#111' },
   section: { marginBottom: 18 },
   sectionTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 8, color: '#333' },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   label: { color: '#555', fontWeight: '500' },
   value: { fontWeight: '600', color: '#111', maxWidth: '60%', textAlign: 'right' },
+  cardContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  payNowButton: { backgroundColor: BRAND_COLOR, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, marginLeft: 10 },
+  payNowText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
+  paidBadge: { backgroundColor: '#d1e7dd', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, marginLeft: 10 },
+  paidText: { color: '#0f5132', fontSize: 13, fontWeight: 'bold' },
 });
