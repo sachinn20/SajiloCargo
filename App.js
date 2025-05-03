@@ -14,6 +14,7 @@ import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 import ResetPasswordScreen from './screens/ResetPasswordScreen';
+import SetNewPasswordScreen from './screens/SetNewPasswordScreen';
 
 import AboutUsScreen from './screens/AboutUsScreen';
 import NotificationScreen from './screens/NotificationScreen';
@@ -114,6 +115,7 @@ export default function App() {
               <Stack.Screen name="Signup" component={SignupScreen} />
               <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
               <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+              <Stack.Screen name="SetNewPassword" component={SetNewPasswordScreen} />
 
 
 

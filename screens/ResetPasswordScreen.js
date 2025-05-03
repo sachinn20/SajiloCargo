@@ -18,7 +18,9 @@ import Icon from "react-native-vector-icons/Feather";
 import axiosInstance from "./axiosInstance";
 import { BRAND_COLOR } from "./config";
 
-const ResetPasswordScreen = ({ navigation }) => {
+const ResetPasswordScreen = ({ navigation, route }) => {
+  const { email } = route.params || {};
+
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
@@ -40,14 +42,12 @@ const ResetPasswordScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await axiosInstance.post("/verify-token", { token });
+      console.log(email);
+      const response = await axiosInstance.post("/verify-token", { token,email });
 
-      Alert.alert("Success", response.data.message, [
-        {
-          text: "Continue",
-          onPress: () => navigation.navigate("SetNewPassword", { token }),
-        },
-      ]);
+      navigation.navigate("SetNewPassword", { email });
+
+
     } catch (error) {
       console.log("Token Verify Error:", error.response?.data || error.message);
       Alert.alert("Error", error.response?.data?.message || "Invalid or expired token.");

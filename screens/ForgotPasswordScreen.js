@@ -31,7 +31,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
     try {
       const response = await axiosInstance.post("/forgot-password", { email });
       console.log("Success response:", response.data); // 🔍 Log success response
-       navigation.navigate("ResetPassword"),
+       navigation.navigate("ResetPassword",{email}),
       // Alert.alert("Success", response.data.message, [
       //   {
       //     text: "OK",
