@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { BACKEND_URL } from './config'; // or wherever you have your URL
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const axiosInstance = axios.create({
   baseURL: BACKEND_URL,
