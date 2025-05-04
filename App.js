@@ -41,6 +41,8 @@ import AddTripScreen from './screens/AddTripScreen';
 import OwnerBookingsScreen from './screens/OwnerBookingsScreen';
 import VehicleOwnerEditProfileScreen from './screens/VehicleOwnerEditProfileScreen';
 
+import PaymentOptionsScreen from './screens/PaymentOptionsScreen';
+
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { BRAND_COLOR } from './screens/config';
@@ -141,6 +143,8 @@ export default function App() {
               <Stack.Screen name="AddTrip" component={AddTripScreen} />
               <Stack.Screen name="OwnerBookings" component={OwnerBookingsScreen} />
               <Stack.Screen name="VehicleOwnerEditProfile" component={VehicleOwnerEditProfileScreen} />
+
+              <Stack.Screen name="PaymentOptions" component={PaymentOptionsScreen} />
               
 
 

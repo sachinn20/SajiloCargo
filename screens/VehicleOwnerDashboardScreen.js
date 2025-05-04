@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Alert, RefreshControl, ActivityIndicator
+  Alert, RefreshControl, ActivityIndicator, ImageBackground
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { BRAND_COLOR } from './config';
 import axios from '../utils/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const VehicleOwnerDashboardScreen = ({ navigation }) => {
   const [userName, setUserName] = useState('');
@@ -75,7 +76,7 @@ const VehicleOwnerDashboardScreen = ({ navigation }) => {
     } catch (e) {
       console.log('Notification check failed', e);
     }
-  }, []);
+  }, [fetchNotifications]);
 
   useFocusEffect(
     useCallback(() => {
@@ -104,81 +105,159 @@ const VehicleOwnerDashboardScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.container}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[BRAND_COLOR]} />}
       >
-        <View style={styles.headerBox}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>{getTimeBasedGreeting()} 👋</Text>
-            {loadingName ? (
-              <ActivityIndicator color="#fff" style={{ marginTop: 4 }} />
-            ) : (
-              <Text style={styles.name}>{userName}</Text>
-            )}
-            <Text style={styles.subGreeting}>
-              Manage your bookings, trips, vehicles and earnings.
-            </Text>
-          </View>
+        <LinearGradient
+          colors={[BRAND_COLOR, '#1a4d80']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerBox}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.greeting}>{getTimeBasedGreeting()} 👋</Text>
+              {loadingName ? (
+                <ActivityIndicator color="#fff" style={{ marginTop: 4 }} />
+              ) : (
+                <Text style={styles.name}>{userName}</Text>
+              )}
+              <Text style={styles.subGreeting}>
+                Manage your bookings, trips, vehicles and earnings.
+              </Text>
+            </View>
 
-          <TouchableOpacity
-            onPress={handleNotificationTap}
-            style={styles.iconWrapper}
-          >
-            <Ionicons name="notifications-outline" size={24} color="#fff" />
-            {notificationCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{notificationCount}</Text>
+            <TouchableOpacity
+              onPress={handleNotificationTap}
+              style={styles.notificationButton}
+            >
+              <Ionicons name="notifications-outline" size={24} color="#fff" />
+              {notificationCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{notificationCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.statsContainer}>
+          
+          <View style={styles.grid}>
+            <TouchableOpacity style={styles.card} activeOpacity={0.7}>
+              <View style={[styles.iconContainer, { backgroundColor: '#e6f7ff' }]}>
+                <Ionicons name="cash-outline" size={24} color={BRAND_COLOR} />
               </View>
-            )}
-          </TouchableOpacity>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Earnings</Text>
+                <Text style={styles.cardValue}>NPR 48,300</Text>
+                <Text style={styles.cardText}>this month</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate('VehicleManagement')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#fff0e6' }]}>
+                <Ionicons name="car-sport-outline" size={24} color="#ff8c42" />
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>My Vehicles</Text>
+                <Text style={styles.cardValue}>{vehicleTotal}</Text>
+                <Text style={styles.cardText}>vehicles</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate('OwnerBookings')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#f0e6ff' }]}>
+                <Ionicons name="clipboard-outline" size={24} color="#8c42ff" />
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Bookings</Text>
+                <Text style={styles.cardValue}>{bookingStats.ongoing}</Text>
+                <Text style={styles.cardText}>ongoing</Text>
+                <View style={styles.miniStat}>
+                  <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
+                  <Text style={styles.miniStatText}>{bookingStats.completed} completed</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate('TripManagement')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: '#e6fff0' }]}>
+                <Ionicons name="map-outline" size={24} color="#42ff8c" />
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Trips</Text>
+                <Text style={styles.cardValue}>{tripCount.scheduled}</Text>
+                <Text style={styles.cardText}>ongoing</Text>
+                <View style={styles.miniStat}>
+                  <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
+                  <Text style={styles.miniStatText}>{tripCount.completed} completed</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={styles.grid}>
-          {/* Cards */}
-          <TouchableOpacity style={styles.card}>
-            <Ionicons name="cash-outline" size={30} color={BRAND_COLOR} />
-            <Text style={styles.cardTitle}>Earnings</Text>
-            <Text style={styles.cardText}>NPR 48,300 this month</Text>
+        <TouchableOpacity style={styles.performanceCard} activeOpacity={0.7}>
+          <View style={[styles.performanceIconContainer, { backgroundColor: '#ffe6e6' }]}>
+            <Ionicons name="bar-chart-outline" size={24} color="#ff4757" />
+          </View>
+          <View style={styles.performanceCardContent}>
+            <Text style={styles.cardTitle}>Performance</Text>
+            <Text style={styles.performanceValue}>98%</Text>
+            <Text style={styles.cardText}>completion rate</Text>
+            <View style={styles.performanceBar}>
+              <View style={[styles.performanceBarFill, { width: '98%' }]} />
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.quickActions}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('AddVehicle')}
+          >
+            <View style={styles.actionIconContainer}>
+              <Ionicons name="add-circle-outline" size={24} color={BRAND_COLOR} />
+            </View>
+            <Text style={styles.actionText}>Add Vehicle</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate('VehicleManagement')}
+            style={styles.actionButton}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('AddTrip')}
           >
-            <Ionicons name="car-sport-outline" size={30} color={BRAND_COLOR} />
-            <Text style={styles.cardTitle}>My Vehicles</Text>
-            <Text style={styles.cardText}>You have {vehicleTotal} vehicles</Text>
+            <View style={styles.actionIconContainer}>
+              <Ionicons name="calendar-outline" size={24} color={BRAND_COLOR} />
+            </View>
+            <Text style={styles.actionText}>Schedule Trip</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate('OwnerBookings')}
-          >
-            <Ionicons name="clipboard-outline" size={30} color={BRAND_COLOR} />
-            <Text style={styles.cardTitle}>Bookings</Text>
-            <Text style={styles.cardText}>
-              {bookingStats.ongoing} ongoing, {bookingStats.completed} completed
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate('TripManagement')}
-          >
-            <Ionicons name="map-outline" size={30} color={BRAND_COLOR} />
-            <Text style={styles.cardTitle}>Trips</Text>
-            <Text style={styles.cardText}>
-              {tripCount.scheduled} ongoing, {tripCount.completed} completed
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.card, { backgroundColor: BRAND_COLOR }]}>
-            <Ionicons name="bar-chart-outline" size={30} color="#fff" />
-            <Text style={[styles.cardTitle, { color: '#fff' }]}>Performance</Text>
-            <Text style={[styles.cardText, { color: '#e0e0e0' }]}>98% completion rate</Text>
-          </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+              <View style={styles.actionIconContainer}>
+                <Ionicons name="analytics-outline" size={24} color={BRAND_COLOR} />
+              </View>
+              <Text style={styles.actionText}>View Reports</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -188,79 +267,206 @@ const VehicleOwnerDashboardScreen = ({ navigation }) => {
 export default VehicleOwnerDashboardScreen;
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  safeArea: { 
+    flex: 1, 
+    backgroundColor: '#f8f9fa' 
+  },
+  container: { 
+    padding: 0 
+  },
   headerBox: {
-    backgroundColor: BRAND_COLOR,
-    borderRadius: 20,
-    paddingVertical: 24,
+    borderRadius: 24,
+    paddingTop: 20,
+    paddingBottom: 30,
     paddingHorizontal: 20,
+    marginBottom: 20,
+    marginHorizontal: 16, // ✅ Add margin on left and right
+    elevation: 4,
+  },
+  
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 24,
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   greeting: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#e6f0ff',
     fontWeight: '500',
   },
   name: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    marginTop: 2,
+    marginTop: 4,
   },
   subGreeting: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#e0e0e0',
-    marginTop: 6,
+    marginTop: 8,
+    lineHeight: 20,
   },
-  iconWrapper: {
+  notificationButton: {
     position: 'relative',
-    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 10,
   },
   badge: {
     position: 'absolute',
-    top: -6,
+    top: -4,
     right: -4,
-    backgroundColor: 'red',
+    backgroundColor: '#ff4757',
     borderRadius: 10,
-    minWidth: 16,
-    paddingHorizontal: 4,
-    height: 16,
+    minWidth: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   badgeText: {
     color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',
   },
+  statsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#333',
+  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
   },
   card: {
     width: '48%',
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    elevation: 1,
+    marginBottom: 12,
+  },
+  cardContent: {
+    flex: 1,
   },
   cardTitle: {
-    fontWeight: 'bold',
-    fontSize: 15,
-    marginTop: 8,
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#666',
     marginBottom: 4,
-    textAlign: 'center',
+  },
+  cardValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
   },
   cardText: {
     fontSize: 12,
-    color: '#555',
+    color: '#888',
+  },
+  miniStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  miniStatText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+  },
+  performanceCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  
+  performanceIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  performanceCardContent: {
+    flex: 1,
+  },
+  performanceValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    marginVertical: 4,
+  },
+  performanceBar: {
+    height: 6,
+    width: '100%',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 3,
+    marginTop: 8,
+  },
+  performanceBarFill: {
+    height: 6,
+    backgroundColor: '#ff4757',
+    borderRadius: 3,
+  },
+  quickActions: {
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  actionButton: {
+    alignItems: 'center',
+    width: '30%',
+  },
+  actionIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  actionText: {
+    fontSize: 12,
+    color: '#666',
     textAlign: 'center',
   },
 });

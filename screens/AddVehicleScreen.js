@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView,
-  Alert, Switch, Platform, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard
+  Alert, Switch, Platform, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import axios from '../utils/axiosInstance';
 import { BRAND_COLOR } from './config';
@@ -96,68 +97,162 @@ const AddVehicleScreen = () => {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
-          <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                <Ionicons name="arrow-back-outline" size={24} color={BRAND_COLOR} />
-              </TouchableOpacity>
-              <Text style={styles.title}>Add Vehicle</Text>
-            </View>
-
-            {/* Form Fields */}
-            <Text style={styles.label}>Vehicle Type</Text>
-            <TextInput
-              style={styles.input}
-              value={form.type}
-              onChangeText={(text) => handleChange('type', text)}
-              placeholder="e.g. Truck"
-            />
-
-            <Text style={styles.label}>Capacity (kg)</Text>
-            <TextInput
-              style={styles.input}
-              value={form.capacity}
-              onChangeText={(text) => handleChange('capacity', text)}
-              placeholder="e.g. 2000"
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.label}>Plate Number</Text>
-            <TextInput
-              style={styles.input}
-              value={form.plate}
-              onChangeText={(text) => handleChange('plate', text)}
-              placeholder="e.g. BA 2 PA 1234"
-            />
-
-            <Text style={styles.label}>License Number</Text>
-            <TextInput
-              style={styles.input}
-              value={form.license}
-              onChangeText={(text) => handleChange('license', text)}
-              placeholder="Transport License ID"
-            />
-
-            <Text style={styles.label}>Insurance (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={form.insurance}
-              onChangeText={(text) => handleChange('insurance', text)}
-              placeholder="Insurance No."
-            />
-
-            <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>Enable for Instant Booking</Text>
-              <Switch value={isInstant} onValueChange={handleInstantToggle} />
-            </View>
-
-            {/* Submit Button */}
-            <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-              <Text style={styles.buttonText}>
-                {loading ? 'Adding...' : 'Add Vehicle'}
-              </Text>
+          <View style={styles.header}>
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()} 
+              style={styles.backButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="arrow-back-outline" size={22} color="#333" />
             </TouchableOpacity>
+            <Text style={styles.title}>Add Vehicle</Text>
+            <View style={styles.headerRight} />
+          </View>
+
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.formContainer}>
+              <View style={styles.formHeader}>
+                <View style={styles.iconContainer}>
+                  <MaterialCommunityIcons name="truck-plus" size={28} color={BRAND_COLOR} />
+                </View>
+                <Text style={styles.formTitle}>Vehicle Details</Text>
+              </View>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Vehicle Type <Text style={styles.required}>*</Text>
+                </Text>
+                <View style={styles.inputContainer}>
+                  <MaterialCommunityIcons name="truck-outline" size={20} color="#999" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    value={form.type}
+                    onChangeText={(text) => handleChange('type', text)}
+                    placeholder="e.g. Truck"
+                    placeholderTextColor="#aaa"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Capacity (kg) <Text style={styles.required}>*</Text>
+                </Text>
+                <View style={styles.inputContainer}>
+                  <MaterialCommunityIcons name="weight" size={20} color="#999" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    value={form.capacity}
+                    onChangeText={(text) => handleChange('capacity', text)}
+                    placeholder="e.g. 2000"
+                    placeholderTextColor="#aaa"
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Plate Number <Text style={styles.required}>*</Text>
+                </Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="card-outline" size={20} color="#999" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    value={form.plate}
+                    onChangeText={(text) => handleChange('plate', text)}
+                    placeholder="e.g. BA 2 PA 1234"
+                    placeholderTextColor="#aaa"
+                    autoCapitalize="characters"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  License Number <Text style={styles.required}>*</Text>
+                </Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="document-text-outline" size={20} color="#999" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    value={form.license}
+                    onChangeText={(text) => handleChange('license', text)}
+                    placeholder="Transport License ID"
+                    placeholderTextColor="#aaa"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Insurance (optional)</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="shield-checkmark-outline" size={20} color="#999" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    value={form.insurance}
+                    onChangeText={(text) => handleChange('insurance', text)}
+                    placeholder="Insurance No."
+                    placeholderTextColor="#aaa"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.formGroup}>
+                <View style={styles.switchRow}>
+                  <View>
+                    <Text style={styles.switchLabel}>Enable for Instant Booking</Text>
+                    {isInstant && (
+                      <Text style={styles.switchSubLabel}>
+                        {location ? 'Location set successfully' : 'Setting up location...'}
+                      </Text>
+                    )}
+                  </View>
+                  <Switch 
+                    value={isInstant} 
+                    onValueChange={handleInstantToggle}
+                    trackColor={{ false: '#e0e0e0', true: `${BRAND_COLOR}80` }}
+                    thumbColor={isInstant ? BRAND_COLOR : '#f4f3f4'}
+                    ios_backgroundColor="#e0e0e0"
+                  />
+                </View>
+                
+                {isInstant && (
+                  <View style={styles.locationInfo}>
+                    <Ionicons name="location-outline" size={18} color={location ? "#4CAF50" : "#FFA000"} />
+                    <Text style={[styles.locationText, { color: location ? "#4CAF50" : "#FFA000" }]}>
+                      {location ? 'Current location will be used for instant booking' : 'Getting your location...'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.buttonContainer}>
+                {/* <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => navigation.goBack()}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity> */}
+                
+                <TouchableOpacity 
+                  style={[styles.submitButton, loading && styles.disabledButton]} 
+                  onPress={handleSubmit} 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>Add Vehicle</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
@@ -168,42 +263,157 @@ const AddVehicleScreen = () => {
 export default AddVehicleScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    marginBottom: 10,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  backButton: { marginRight: 12 },
-  title: { fontSize: 22, fontWeight: 'bold', color: BRAND_COLOR },
-  label: { fontWeight: '600', marginBottom: 4, paddingHorizontal: 20 },
-  input: {
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerRight: {
+    width: 40,
+  },
+  title: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: '#333',
+  },
+  scrollContent: {
+    paddingBottom: 30,
+  },
+  formContainer: {
+    padding: 20,
+  },
+  formHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f0f7ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  formTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  label: { 
+    fontSize: 14,
+    fontWeight: '500', 
+    marginBottom: 8, 
+    color: '#333',
+    paddingLeft: 4,
+  },
+  required: {
+    color: '#ff4757',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#f9f9f9',
-    marginHorizontal: 20,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    backgroundColor: '#fff',
+  },
+  inputIcon: {
+    paddingHorizontal: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingRight: 12,
+    fontSize: 15,
+    color: '#333',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginVertical: 16,
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 25,
+    marginBottom: 12,
   },
-  switchLabel: { fontSize: 16, color: '#333' },
-  button: {
-    backgroundColor: BRAND_COLOR,
-    padding: 14,
-    borderRadius: 8,
+  switchLabel: { 
+    fontSize: 16, 
+    fontWeight: '500',
+    color: '#333' 
+  },
+  switchSubLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  locationInfo: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginTop: 10,
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  locationText: {
+    fontSize: 13,
+    marginLeft: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: '#f0f0f0',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  submitButton: {
+    flex: 2,
+    backgroundColor: BRAND_COLOR,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: {
+    opacity: 0.7,
+  },
+  submitButtonText: { 
+    color: '#fff', 
+    fontWeight: '600', 
+    fontSize: 16 
+  },
 });
