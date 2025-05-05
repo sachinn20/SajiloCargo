@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   ScrollView,
   Image,
+  Platform,
+  KeyboardAvoidingView
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -111,80 +113,134 @@ const CustomerEditProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Top bar */}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#000" />
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={22} color="#555" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit profile</Text>
-          <Ionicons name="ellipsis-vertical" size={20} color="#000" />
+          <Text style={styles.headerTitle}>Personal Information</Text>
+          <View style={{ width: 40 }} />
         </View>
 
-        {/* Profile image */}
-        <View style={styles.profilePicContainer}>
-          <TouchableOpacity onPress={pickImage}>
-            <Image
-              source={
-                profileImage
-                  ? { uri: profileImage }
-                  : require('../assets/icon.png')
-              }
-              style={styles.profilePic}
-            />
-            <View style={styles.cameraIcon}>
-              <Ionicons name="camera" size={18} color="#fff" />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Input cards */}
-        <View style={styles.card}>
-          <Text style={styles.label}>Full legal name</Text>
-          <TextInput
-            style={styles.input}
-            value={form.name}
-            onChangeText={(text) => setForm({ ...form, name: text })}
-            placeholder="Full Name"
-          />
-
-          <Text style={styles.label}>Email address</Text>
-          <TextInput
-            style={[styles.input, styles.readOnly]}
-            value={form.email}
-            editable={false}
-          />
-
-          <Text style={styles.label}>Phone number</Text>
-          <TextInput
-            style={styles.input}
-            value={form.phone_number}
-            keyboardType="phone-pad"
-            onChangeText={(text) => setForm({ ...form, phone_number: text })}
-          />
-
-          <Text style={styles.label}>Role</Text>
-          <TextInput
-            style={[styles.input, styles.readOnly]}
-            value={form.role.charAt(0).toUpperCase() + form.role.slice(1)}
-            editable={false}
-          />
-        </View>
-
-        {/* Save button */}
-        <TouchableOpacity
-          style={styles.saveBtn}
-          onPress={handleUpdate}
-          disabled={loading}
+        <ScrollView 
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.saveText}>Save</Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
+          <View style={styles.profilePicSection}>
+            <TouchableOpacity 
+              onPress={pickImage}
+              style={styles.profilePicContainer}
+              activeOpacity={0.9}
+            >
+              <Image
+                source={
+                  profileImage
+                    ? { uri: profileImage }
+                    : require('../assets/icon.png')
+                }
+                style={styles.profilePic}
+              />
+              <View style={styles.cameraIconContainer}>
+                <Ionicons name="camera" size={18} color="#fff" />
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.changePhotoText}>Tap to change photo</Text>
+          </View>
+
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Full Name</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="person" size={20} color="#666" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={form.name}
+                  onChangeText={(text) => setForm({ ...form, name: text })}
+                  placeholder="Enter your full name"
+                  placeholderTextColor="#aaa"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <View style={[styles.inputContainer, styles.readOnlyContainer]}>
+                <Ionicons name="mail" size={20} color="#999" style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, styles.readOnly]}
+                  value={form.email}
+                  editable={false}
+                  placeholder="Your email address"
+                  placeholderTextColor="#aaa"
+                />
+                <Ionicons name="lock-closed" size={16} color="#999" style={styles.lockIcon} />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Phone Number</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="call" size={20} color="#666" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  keyboardType="phone-pad"
+                  value={form.phone_number}
+                  onChangeText={(text) => setForm({ ...form, phone_number: text })}
+                  placeholder="Enter your phone number"
+                  placeholderTextColor="#aaa"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Role</Text>
+              <View style={[styles.inputContainer, styles.readOnlyContainer]}>
+                <Ionicons name="briefcase" size={20} color="#999" style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, styles.readOnly]}
+                  value={form.role.charAt(0).toUpperCase() + form.role.slice(1)}
+                  editable={false}
+                  placeholder="Your role"
+                  placeholderTextColor="#aaa"
+                />
+                <Ionicons name="lock-closed" size={16} color="#999" style={styles.lockIcon} />
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.saveButton} 
+            onPress={handleUpdate} 
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Ionicons name="save" size={20} color="#fff" style={styles.saveIcon} />
+                <Text style={styles.saveText}>Save Changes</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.cancelButton} 
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -192,79 +248,178 @@ const CustomerEditProfileScreen = ({ navigation }) => {
 export default CustomerEditProfileScreen;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
   container: {
     padding: 20,
     paddingBottom: 50,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  
+  // Profile Picture Section
+  profilePicSection: {
     alignItems: 'center',
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    marginBottom: 30,
   },
   profilePicContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
+    position: 'relative',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
   },
   profilePic: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#ddd',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: '#fff',
+    backgroundColor: '#eee',
   },
-  cameraIcon: {
+  cameraIconContainer: {
     position: 'absolute',
     bottom: 0,
     right: 0,
     backgroundColor: BRAND_COLOR,
-    padding: 6,
-    borderRadius: 20,
-    borderWidth: 2,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
     borderColor: '#fff',
   },
-  card: {
+  changePhotoText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: BRAND_COLOR,
+    fontWeight: '500',
+  },
+  
+  // Form Container
+  formContainer: {
     backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 5,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  inputGroup: {
+    marginBottom: 20,
   },
   label: {
     fontSize: 14,
-    color: '#888',
-    marginBottom: 6,
-    marginTop: 14,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+  },
+  readOnlyContainer: {
+    backgroundColor: '#f5f5f5',
+    borderColor: '#e0e0e0',
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    flex: 1,
+    paddingVertical: 14,
     fontSize: 16,
+    color: '#333',
   },
   readOnly: {
-    backgroundColor: '#eee',
     color: '#999',
   },
-  saveBtn: {
-    backgroundColor: BRAND_COLOR,
-    paddingVertical: 14,
-    borderRadius: 30,
+  lockIcon: {
+    marginLeft: 10,
+  },
+  
+  // Buttons
+  saveButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: BRAND_COLOR,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: BRAND_COLOR,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  saveIcon: {
+    marginRight: 8,
   },
   saveText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  cancelButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  cancelText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

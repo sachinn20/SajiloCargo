@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView,
-  Alert, Platform, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard
+  Alert, Platform, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BRAND_COLOR } from './config';
 
@@ -19,14 +20,17 @@ const InstantBookingScreen = () => {
   const [receiverNumber, setReceiverNumber] = useState('');
   const [notes, setNotes] = useState('');
   const [location, setLocation] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // 📍 Get location + autofill pickup
   useEffect(() => {
     (async () => {
       try {
+        setIsLoading(true);
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permission Denied', 'Location access is required to use this feature.');
+          setIsLoading(false);
           return;
         }
 
@@ -42,6 +46,8 @@ const InstantBookingScreen = () => {
       } catch (err) {
         console.error(err);
         Alert.alert('Error', 'Unable to fetch your current location.');
+      } finally {
+        setIsLoading(false);
       }
     })();
   }, []);
@@ -75,77 +81,173 @@ const InstantBookingScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-
-          {/* Fixed Header */}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={{ flex: 1 }}
+      >
+        <View style={{ flex: 1 }}>
+          {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Ionicons name="arrow-back-outline" size={24} color={BRAND_COLOR} />
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()} 
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={24} color={BRAND_COLOR} />
             </TouchableOpacity>
+
             <Text style={styles.title}>Instant Booking</Text>
+
+            {/* Invisible placeholder to center title */}
+            <View style={{ width: 40 }} />
           </View>
 
-          {/* Scrollable Form */}
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-            <Text style={styles.label}>Pickup Address</Text>
-            <TextInput
-              style={styles.input}
-              value={pickup}
-              onChangeText={setPickup}
-              placeholder="Auto-filled or editable"
-            />
 
-            <Text style={styles.label}>Drop-off Address</Text>
-            <TextInput
-              style={styles.input}
-              value={dropoff}
-              onChangeText={setDropoff}
-              placeholder="e.g. Pokhara"
-            />
+          {/* Scrollable Content */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>
+                <Ionicons name="flash" size={18} color={BRAND_COLOR} style={{ marginRight: 6 }} />
+                Quick Delivery
+              </Text>
+              <Text style={styles.sectionDescription}>
+                Find nearby vehicles for immediate pickup and delivery of your package.
+              </Text>
+            </View>
 
-            <Text style={styles.label}>Weight (kg)</Text>
-            <TextInput
-              style={styles.input}
-              value={weight}
-              onChangeText={setWeight}
-              placeholder="e.g. 25"
-              keyboardType="numeric"
-            />
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>Location Details</Text>
+              
+              <View style={styles.routeContainer}>
+                <View style={styles.routeIconContainer}>
+                  <View style={styles.originDot} />
+                  <View style={styles.routeLine} />
+                  <View style={styles.destinationDot} />
+                </View>
+                
+                <View style={styles.routeInputs}>
+                  <View style={styles.inputWrapper}>
+                    <Text style={styles.label}>Pickup Address</Text>
+                    <View style={styles.inputContainer}>
+                      <Ionicons name="location" size={20} color="#777" style={styles.inputIcon} />
+                      {isLoading ? (
+                        <View style={styles.loadingContainer}>
+                          <ActivityIndicator size="small" color={BRAND_COLOR} />
+                          <Text style={styles.loadingText}>Getting your location...</Text>
+                        </View>
+                      ) : (
+                        <TextInput
+                          style={styles.textInput}
+                          value={pickup}
+                          onChangeText={setPickup}
+                          placeholder="Auto-filled or editable"
+                          placeholderTextColor="#888"
+                        />
+                      )}
+                    </View>
+                  </View>
+                  
+                  <View style={styles.inputWrapper}>
+                    <Text style={styles.label}>Drop-off Address</Text>
+                    <View style={styles.inputContainer}>
+                      <Ionicons name="location-outline" size={20} color="#777" style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.textInput}
+                        value={dropoff}
+                        onChangeText={setDropoff}
+                        placeholder="Enter destination address"
+                        placeholderTextColor="#888"
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
 
-            <Text style={styles.label}>Receiver Name</Text>
-            <TextInput
-              style={styles.input}
-              value={receiverName}
-              onChangeText={setReceiverName}
-              placeholder="e.g. Ramesh Shrestha"
-            />
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>Package Details</Text>
+              
+              <Text style={styles.label}>Weight (kg)</Text>
+              <View style={styles.inputContainer}>
+                <MaterialCommunityIcons name="weight" size={20} color="#777" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  value={weight}
+                  onChangeText={setWeight}
+                  placeholder="Enter package weight"
+                  placeholderTextColor="#888"
+                  keyboardType="numeric"
+                />
+                <View style={styles.unitBadge}>
+                  <Text style={styles.unitText}>kg</Text>
+                </View>
+              </View>
 
-            <Text style={styles.label}>Receiver Number</Text>
-            <TextInput
-              style={styles.input}
-              value={receiverNumber}
-              onChangeText={setReceiverNumber}
-              placeholder="e.g. 9800000000"
-              keyboardType="phone-pad"
-              maxLength={10}
-            />
+              <Text style={styles.label}>Notes (optional)</Text>
+              <View style={[styles.inputContainer, { height: 100, alignItems: 'flex-start', paddingTop: 12 }]}>
+                <Ionicons name="create-outline" size={20} color="#777" style={[styles.inputIcon, { marginTop: 2 }]} />
+                <TextInput
+                  style={[styles.textInput, { height: 80, textAlignVertical: 'top' }]}
+                  value={notes}
+                  onChangeText={setNotes}
+                  placeholder="Special handling instructions or package details"
+                  placeholderTextColor="#888"
+                  multiline
+                />
+              </View>
+            </View>
 
-            <Text style={styles.label}>Notes (optional)</Text>
-            <TextInput
-              style={[styles.input, { height: 80 }]}
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Extra notes if any"
-              multiline
-            />
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>Receiver Information</Text>
+              
+              <Text style={styles.label}>Receiver Name</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="person-outline" size={20} color="#777" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  value={receiverName}
+                  onChangeText={setReceiverName}
+                  placeholder="Enter receiver's full name"
+                  placeholderTextColor="#888"
+                />
+              </View>
 
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.searchText}>Find Nearby Vehicles</Text>
+              <Text style={styles.label}>Receiver Number</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="call-outline" size={20} color="#777" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  value={receiverNumber}
+                  onChangeText={setReceiverNumber}
+                  placeholder="10-digit phone number"
+                  placeholderTextColor="#888"
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.button} 
+              onPress={handleSearch}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="search" size={20} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Find Nearby Vehicles</Text>
             </TouchableOpacity>
+
+            <View style={styles.infoBox}>
+              <Ionicons name="information-circle-outline" size={20} color="#666" style={{ marginRight: 8 }} />
+              <Text style={styles.infoText}>
+                Instant booking connects you with drivers in your area for immediate pickup. Pricing may vary based on distance and availability.
+              </Text>
+            </View>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -153,26 +255,186 @@ const InstantBookingScreen = () => {
 export default InstantBookingScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: {
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f8f9fa', 
+    padding: 0 
+  },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+    backgroundColor: '#fff'
+  },
+  backButton: { 
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    marginRight: 12 
+  },
+  title: { 
+    flex: 1,
+    fontSize: 20, 
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
+  
+  scrollContent: {
+    paddingBottom: 40
+  },
+  formSection: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    paddingTop: 8,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  label: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    marginBottom: 8,
+    color: '#555'
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 50,
+    marginBottom: 16,
     backgroundColor: '#fff',
-    zIndex: 10,
   },
-  backButton: { marginRight: 12 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  label: { fontWeight: '600', marginBottom: 4, paddingHorizontal: 20 },
-  input: {
-    borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
-    padding: 12, marginBottom: 12, backgroundColor: '#f9f9f9', marginHorizontal: 20
+  inputIcon: {
+    marginRight: 10,
   },
-  searchButton: {
-    backgroundColor: BRAND_COLOR, padding: 14, borderRadius: 8,
-    alignItems: 'center', marginTop: 10, marginHorizontal: 20
+  textInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#333',
   },
-  searchText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  loadingContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
+  },
+  unitBadge: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  unitText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  routeContainer: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  routeIconContainer: {
+    width: 24,
+    alignItems: 'center',
+    marginRight: 12,
+    paddingTop: 32,
+  },
+  originDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: BRAND_COLOR,
+    marginBottom: 4,
+  },
+  routeLine: {
+    width: 2,
+    height: 50,
+    backgroundColor: BRAND_COLOR,
+    marginVertical: 4,
+  },
+  destinationDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#ff6b6b',
+    marginTop: 4,
+  },
+  routeInputs: {
+    flex: 1,
+  },
+  inputWrapper: {
+    marginBottom: 8,
+  },
+  button: {
+    backgroundColor: BRAND_COLOR,
+    padding: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 24,
+    marginHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    shadowColor: BRAND_COLOR,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  buttonText: { 
+    color: '#fff', 
+    fontWeight: 'bold', 
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  buttonIcon: {
+    marginRight: 4,
+  },
+  infoBox: {
+    backgroundColor: '#f0f8ff',
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 16,
+    marginTop: 20,
+    flexDirection: 'row',
+    borderLeftWidth: 3,
+    borderLeftColor: BRAND_COLOR,
+  },
+  infoText: {
+    fontSize: 13,
+    color: '#666',
+    flex: 1,
+    lineHeight: 18,
+  },
 });

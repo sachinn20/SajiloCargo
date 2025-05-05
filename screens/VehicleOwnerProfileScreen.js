@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Alert, Modal, Pressable,
   ActivityIndicator, ImageBackground, StatusBar, Platform, Dimensions
@@ -17,27 +17,38 @@ const VehicleOwnerProfileScreen = ({ navigation }) => {
   const [user, setUser] = useState(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [firstLoadDone, setFirstLoadDone] = useState(false);
+
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchUserProfile();
-    }, [])
+      if (firstLoadDone) {
+        fetchUserProfile(false); // don't show loader
+      }
+    }, [firstLoadDone])
   );
+  
+  useEffect(() => {
+    fetchUserProfile(true); // only show loading spinner the first time
+  }, []);
+  
 
-  const fetchUserProfile = async () => {
-    setLoading(true);
+  const fetchUserProfile = async (showLoader = true) => {
+    if (showLoader) setLoading(true); // only show spinner on first load
     const token = await AsyncStorage.getItem('authToken');
     try {
       const res = await axios.get('/profile', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(res.data.data);
+      setFirstLoadDone(true);
     } catch (err) {
       console.error('Error fetching vehicle owner profile:', err);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
+  
 
   const handleLogout = () => {
     Alert.alert(
@@ -68,10 +79,6 @@ const VehicleOwnerProfileScreen = ({ navigation }) => {
     );
   }
 
-  // Safely get stats from user object
-  const tripCount = user?.trips_count || 0;
-  const vehicleCount = user?.vehicles_count || 0;
-  const bookingCount = user?.completed_bookings_count || 0;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -185,14 +192,12 @@ const VehicleOwnerProfileScreen = ({ navigation }) => {
               icon="car" 
               label="My Vehicles" 
               onPress={() => navigation.navigate('VehicleManagement')} 
-              count={vehicleCount}
               iconColor="#2196F3"
             />
             <MenuItem 
               icon="map" 
               label="My Trips" 
               onPress={() => navigation.navigate('TripManagement')} 
-              count={tripCount}
               iconColor="#FF9800"
             />
             <MenuItem 

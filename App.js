@@ -51,6 +51,7 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Customer Bottom Tabs
+// Customer Bottom Tabs
 const CustomerTabs = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
@@ -81,8 +82,8 @@ const CustomerTabs = () => (
           case 'Home':
             iconName = 'home-outline';
             break;
-          case 'Wallet':
-            iconName = 'wallet-outline';
+          case 'Bookings':
+            iconName = 'document-text-outline';
             break;
           case 'Track':
             iconName = 'navigate-outline';
@@ -98,11 +99,12 @@ const CustomerTabs = () => (
     })}
   >
     <Tab.Screen name="Home" component={CustomerDashboardScreen} />
-    <Tab.Screen name="Wallet" component={WalletScreen} />
+    <Tab.Screen name="Bookings" component={CustomerMyBookingScreen} />
     <Tab.Screen name="Track" component={TrackScreen} />
     <Tab.Screen name="Profile" component={ProfileScreen} />
   </Tab.Navigator>
 );
+
 
 export default function App() {
   return (

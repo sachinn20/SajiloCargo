@@ -8,6 +8,10 @@ import {
   Alert,
   ActivityIndicator,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -100,133 +104,195 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
-      <Text style={styles.subtitle}>Fill in your email and password to continue</Text>
-
-      <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
-        <Text style={styles.label}>Email Address</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="example@gmail.com"
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-            setErrors({ ...errors, email: null });
-          }}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholderTextColor="#999"
-        />
-        {errors.email && <Text style={styles.error}>{errors.email}</Text>}
-
-        <Text style={styles.label}>Password</Text>
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={styles.inputPassword}
-            placeholder="********"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              setErrors({ ...errors, password: null });
-            }}
-            placeholderTextColor="#999"
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Icon name={showPassword ? 'eye-off' : 'eye'} size={20} color="#777" />
-          </TouchableOpacity>
-        </View>
-        {errors.password && <Text style={styles.error}>{errors.password}</Text>}
-      </Animated.View>
-
-      <View style={styles.row}>
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setRememberMe(!rememberMe)}
-        >
-          <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-            {rememberMe && <Icon name="checkmark" size={14} color="#fff" />}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoid}
+      >
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>Fill in your email and password to continue</Text>
           </View>
-          <Text style={styles.checkboxText}>Remember password</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-          <Text style={styles.forgotPassword}>Forgot Password?</Text>
-        </TouchableOpacity>
+          <Animated.View style={[styles.formContainer, { transform: [{ translateX: shakeAnim }] }]}>
+            <Text style={styles.label}>Email Address</Text>
+            <View style={[styles.inputContainer, errors.email && styles.inputError]}>
+              <Icon name="mail-outline" size={20} color="#777" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="example@gmail.com"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setErrors({ ...errors, email: null });
+                }}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholderTextColor="#999"
+              />
+            </View>
+            {errors.email && <Text style={styles.error}>{errors.email}</Text>}
 
-      </View>
+            <Text style={styles.label}>Password</Text>
+            <View style={[styles.inputContainer, errors.password && styles.inputError]}>
+              <Icon name="lock-closed-outline" size={20} color="#777" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="********"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrors({ ...errors, password: null });
+                }}
+                placeholderTextColor="#999"
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                <Icon name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#777" />
+              </TouchableOpacity>
+            </View>
+            {errors.password && <Text style={styles.error}>{errors.password}</Text>}
+          </Animated.View>
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.loginButtonText}>Log in</Text>
-        )}
-      </TouchableOpacity>
+          <View style={styles.row}>
+            <TouchableOpacity
+              style={styles.checkboxRow}
+              onPress={() => setRememberMe(!rememberMe)}
+            >
+              <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                {rememberMe && <Icon name="checkmark" size={14} color="#fff" />}
+              </View>
+              <Text style={styles.checkboxText}>Remember Me</Text>
+            </TouchableOpacity>
 
-      <View style={styles.signupRow}>
-        <Text style={styles.normalText}>Don't have an account?</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-          <Text style={styles.signupText}> Sign Up</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+            <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+              <Text style={styles.forgotPassword}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.loginButton, loading && styles.loginButtonLoading]} 
+            onPress={handleLogin} 
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Text style={styles.loginButtonText}>Log in</Text>
+                <Icon name="arrow-forward" size={20} color="#fff" style={styles.loginButtonIcon} />
+              </>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.signupRow}>
+            <Text style={styles.normalText}>Don't have an account?</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+              <Text style={styles.signupText}> Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: 'white', justifyContent: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 6, color: '#000' },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 24 },
-  label: { fontSize: 14, color: '#444', marginBottom: 4 },
-  input: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  container: { 
+    flex: 1, 
+    padding: 24, 
+    backgroundColor: 'white', 
+    justifyContent: 'center' 
+  },
+  header: {
+    marginBottom: 32,
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    marginBottom: 8, 
+    color: '#000' 
+  },
+  subtitle: { 
+    fontSize: 16, 
+    color: '#666', 
+  },
+  formContainer: {
+    marginBottom: 16,
+  },
+  label: { 
+    fontSize: 14, 
+    fontWeight: '500',
+    color: '#444', 
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
-    fontSize: 15,
+    borderColor: '#ddd',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 12,
+    height: 56,
+  },
+  inputError: {
+    borderColor: '#ff6b6b',
+    borderWidth: 1.5,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  eyeIcon: {
+    padding: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
     color: '#000',
   },
   error: {
-    color: 'red',
-    fontSize: 12,
-    marginBottom: 10,
+    color: '#ff6b6b',
+    fontSize: 13,
+    marginBottom: 16,
     marginLeft: 4,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 10,
-  },
-  inputPassword: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#000',
+    marginTop: -12,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   checkbox: {
-    width: 18,
-    height: 18,
+    width: 20,
+    height: 20,
     borderWidth: 1.5,
-    borderRadius: 4,
+    borderRadius: 6,
     borderColor: '#ccc',
     justifyContent: 'center',
     alignItems: 'center',
@@ -235,29 +301,67 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND_COLOR,
     borderColor: BRAND_COLOR,
   },
-  checkboxText: { marginLeft: 8, fontSize: 13, color: '#444' },
+  checkboxText: { 
+    marginLeft: 10, 
+    fontSize: 14, 
+    color: '#444' 
+  },
   forgotPassword: {
     color: BRAND_COLOR,
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
   },
   loginButton: {
     backgroundColor: BRAND_COLOR,
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    shadowColor: BRAND_COLOR,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  loginButtonLoading: {
+    opacity: 0.8,
   },
   loginButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },
+  loginButtonIcon: {
+    marginLeft: 8,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#eee',
+  },
+  dividerText: {
+    paddingHorizontal: 16,
+    color: '#999',
+    fontSize: 14,
+  },
   signupRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 12,
   },
-  normalText: { fontSize: 14, color: '#555' },
-  signupText: { fontSize: 14, fontWeight: 'bold', color: BRAND_COLOR },
+  normalText: { 
+    fontSize: 15, 
+    color: '#555' 
+  },
+  signupText: { 
+    fontSize: 15, 
+    fontWeight: 'bold', 
+    color: BRAND_COLOR 
+  },
 });

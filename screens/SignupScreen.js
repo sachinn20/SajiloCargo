@@ -9,6 +9,10 @@ import {
   ScrollView,
   Animated,
   ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
@@ -94,214 +98,317 @@ const SignupScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>Create an account</Text>
-
-      <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
-        <TextInput
-          placeholder="Full Name"
-          value={form.name}
-          onChangeText={(text) => handleChange('name', text)}
-          style={styles.input}
-        />
-        {errors.name && <Text style={styles.error}>{errors.name}</Text>}
-
-        <TextInput
-          placeholder="Email Address"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={form.email}
-          onChangeText={(text) => handleChange('email', text)}
-          style={styles.input}
-        />
-        {errors.email && <Text style={styles.error}>{errors.email}</Text>}
-
-        <TextInput
-          placeholder="Phone Number"
-          keyboardType="phone-pad"
-          maxLength={10}
-          value={form.phone_number}
-          onChangeText={(text) => handleChange('phone_number', text.replace(/[^0-9]/g, ''))}
-          style={styles.input}
-        />
-        {errors.phone_number && <Text style={styles.error}>{errors.phone_number}</Text>}
-
-        <View style={styles.passwordContainer}>
-          <TextInput
-            placeholder="Password"
-            secureTextEntry={secureTextEntry}
-            value={form.password}
-            onChangeText={(text) => handleChange('password', text)}
-            style={styles.passwordInput}
-          />
-          <TouchableOpacity onPress={togglePasswordVisibility}>
-            <Ionicons name={secureTextEntry ? 'eye-off' : 'eye'} size={20} color="#555" />
-          </TouchableOpacity>
-        </View>
-        {errors.password && <Text style={styles.error}>{errors.password}</Text>}
-
-        <TextInput
-          placeholder="Confirm Password"
-          secureTextEntry={secureTextEntry}
-          value={form.password_confirmation}
-          onChangeText={(text) => handleChange('password_confirmation', text)}
-          style={styles.input}
-        />
-        {errors.password_confirmation && (
-          <Text style={styles.error}>{errors.password_confirmation}</Text>
-        )}
-      </Animated.View>
-
-      <Text style={styles.roleLabel}>Choose Role</Text>
-      <View style={styles.roleRow}>
-        <TouchableOpacity
-          style={[styles.roleButton, form.role === 'customer' && styles.roleButtonSelected]}
-          onPress={() => handleRoleSelect('customer')}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoid}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.roleText, form.role === 'customer' && styles.roleTextSelected]}>
-            Customer
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.headerContainer}>
+            <Text style={styles.header}>Create an account</Text>
+            <Text style={styles.subheader}>Please fill in the details below to get started</Text>
+          </View>
 
-        <TouchableOpacity
-          style={[styles.roleButton, form.role === 'vehicle_owner' && styles.roleButtonSelected]}
-          onPress={() => handleRoleSelect('vehicle_owner')}
-        >
-          <Text
-            style={[styles.roleText, form.role === 'vehicle_owner' && styles.roleTextSelected]}
+          <Animated.View style={[styles.formContainer, { transform: [{ translateX: shakeAnim }] }]}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="person-outline" size={20} color="#777" style={styles.inputIcon} />
+              <TextInput
+                placeholder="Full Name"
+                value={form.name}
+                onChangeText={(text) => handleChange('name', text)}
+                style={styles.input}
+                placeholderTextColor="#999"
+              />
+            </View>
+            {errors.name && <Text style={styles.error}>{errors.name}</Text>}
+
+            <View style={styles.inputWrapper}>
+              <Ionicons name="mail-outline" size={20} color="#777" style={styles.inputIcon} />
+              <TextInput
+                placeholder="Email Address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={form.email}
+                onChangeText={(text) => handleChange('email', text)}
+                style={styles.input}
+                placeholderTextColor="#999"
+              />
+            </View>
+            {errors.email && <Text style={styles.error}>{errors.email}</Text>}
+
+            <View style={styles.inputWrapper}>
+              <Ionicons name="call-outline" size={20} color="#777" style={styles.inputIcon} />
+              <TextInput
+                placeholder="Phone Number"
+                keyboardType="phone-pad"
+                maxLength={10}
+                value={form.phone_number}
+                onChangeText={(text) => handleChange('phone_number', text.replace(/[^0-9]/g, ''))}
+                style={styles.input}
+                placeholderTextColor="#999"
+              />
+            </View>
+            {errors.phone_number && <Text style={styles.error}>{errors.phone_number}</Text>}
+
+            <View style={styles.passwordContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color="#777" style={styles.inputIcon} />
+              <TextInput
+                placeholder="Password"
+                secureTextEntry={secureTextEntry}
+                value={form.password}
+                onChangeText={(text) => handleChange('password', text)}
+                style={styles.passwordInput}
+                placeholderTextColor="#999"
+              />
+              <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
+                <Ionicons name={secureTextEntry ? 'eye-off-outline' : 'eye-outline'} size={20} color="#555" />
+              </TouchableOpacity>
+            </View>
+            {errors.password && <Text style={styles.error}>{errors.password}</Text>}
+
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed-outline" size={20} color="#777" style={styles.inputIcon} />
+              <TextInput
+                placeholder="Confirm Password"
+                secureTextEntry={secureTextEntry}
+                value={form.password_confirmation}
+                onChangeText={(text) => handleChange('password_confirmation', text)}
+                style={styles.input}
+                placeholderTextColor="#999"
+              />
+            </View>
+            {errors.password_confirmation && (
+              <Text style={styles.error}>{errors.password_confirmation}</Text>
+            )}
+          </Animated.View>
+
+          <View style={styles.roleSection}>
+            <Text style={styles.roleLabel}>Choose Role</Text>
+            <View style={styles.roleRow}>
+              <TouchableOpacity
+                style={[styles.roleButton, form.role === 'customer' && styles.roleButtonSelected]}
+                onPress={() => handleRoleSelect('customer')}
+                activeOpacity={0.8}
+              >
+                <Ionicons 
+                  name="person" 
+                  size={20} 
+                  color={form.role === 'customer' ? '#fff' : BRAND_COLOR} 
+                  style={styles.roleIcon}
+                />
+                <Text style={[styles.roleText, form.role === 'customer' && styles.roleTextSelected]}>
+                  Customer
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.roleButton, form.role === 'vehicle_owner' && styles.roleButtonSelected]}
+                onPress={() => handleRoleSelect('vehicle_owner')}
+                activeOpacity={0.8}
+              >
+                <Ionicons 
+                  name="car" 
+                  size={20} 
+                  color={form.role === 'vehicle_owner' ? '#fff' : BRAND_COLOR} 
+                  style={styles.roleIcon}
+                />
+                <Text
+                  style={[styles.roleText, form.role === 'vehicle_owner' && styles.roleTextSelected]}
+                >
+                  Vehicle Owner
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.termsContainer}>
+            <View style={styles.checkboxRow}>
+              <TouchableOpacity
+                onPress={() => {
+                  setAgreed(!agreed);
+                  setErrors({ ...errors, agreed: null });
+                }}
+                style={[styles.checkbox, agreed && styles.checkboxChecked]}
+              >
+                {agreed && <Ionicons name="checkmark" size={16} color="#fff" />}
+              </TouchableOpacity>
+              <Text style={styles.checkboxText}>
+                By ticking this box, you agree to our{' '}
+                <Text style={styles.link}>Terms and conditions</Text> and{' '}
+                <Text style={styles.link}>privacy policy</Text>
+              </Text>
+            </View>
+            {errors.agreed && <Text style={styles.error}>{errors.agreed}</Text>}
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.signupBtn, loading && styles.signupBtnLoading]} 
+            onPress={handleSignup} 
+            disabled={loading}
+            activeOpacity={0.8}
           >
-            Vehicle Owner
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Text style={styles.signupText}>Sign Up</Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.signupIcon} />
+              </>
+            )}
+          </TouchableOpacity>
+
+          <Text style={styles.bottomText}>
+            Already have an account?{' '}
+            <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
+              Log In
+            </Text>
           </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.checkboxRow}>
-        <TouchableOpacity
-          onPress={() => {
-            setAgreed(!agreed);
-            setErrors({ ...errors, agreed: null });
-          }}
-          style={[styles.checkbox, agreed && styles.checkboxChecked]}
-        >
-          {agreed && <Ionicons name="checkmark" size={16} color="#fff" />}
-        </TouchableOpacity>
-        <Text style={styles.checkboxText}>
-          By ticking this box, you agree to our{' '}
-          <Text style={styles.link}>Terms and conditions</Text> and{' '}
-          <Text style={styles.link}>privacy policy</Text>
-        </Text>
-      </View>
-      {errors.agreed && <Text style={styles.error}>{errors.agreed}</Text>}
-
-      <TouchableOpacity style={styles.signupBtn} onPress={handleSignup} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.signupText}>Sign Up</Text>
-        )}
-      </TouchableOpacity>
-
-      <Text style={styles.bottomText}>
-        Already have an account?{' '}
-        <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
-          Sign in
-        </Text>
-      </Text>
-    </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 export default SignupScreen;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
   container: {
     padding: 24,
     backgroundColor: '#fff',
     flexGrow: 1,
     justifyContent: 'center',
   },
+  headerContainer: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
   header: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 8,
     color: '#000',
     textAlign: 'center',
   },
-  input: {
+  subheader: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  formContainer: {
+    marginBottom: 20,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ccc',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 6,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    paddingHorizontal: 16,
     marginBottom: 16,
-    fontSize: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#f9f9f9',
+    height: 56,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#000',
   },
   error: {
-    color: 'red',
-    fontSize: 12,
-    marginBottom: 8,
+    color: '#ff6b6b',
+    fontSize: 13,
+    marginTop: -8,
+    marginBottom: 16,
     marginLeft: 4,
   },
   passwordContainer: {
     flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
-    paddingHorizontal: 14,
     alignItems: 'center',
-    marginBottom: 10,
-    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#f9f9f9',
+    height: 56,
   },
   passwordInput: {
     flex: 1,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: 16,
+    color: '#000',
+  },
+  eyeIcon: {
+    padding: 8,
+  },
+  roleSection: {
+    marginBottom: 24,
   },
   roleLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 12,
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
     color: '#444',
   },
   roleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
   },
   roleButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderWidth: 1,
+    flexDirection: 'row',
+    paddingVertical: 14,
+    borderWidth: 1.5,
     borderColor: BRAND_COLOR,
-    borderRadius: 6,
-    marginRight: 10,
+    borderRadius: 12,
+    marginHorizontal: 6,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   roleButtonSelected: {
     backgroundColor: BRAND_COLOR,
   },
+  roleIcon: {
+    marginRight: 8,
+  },
   roleText: {
     color: BRAND_COLOR,
-    fontWeight: '500',
+    fontWeight: '600',
+    fontSize: 15,
   },
   roleTextSelected: {
     color: '#fff',
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  termsContainer: {
+    marginBottom: 24,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     borderWidth: 2,
     borderColor: BRAND_COLOR,
-    borderRadius: 4,
-    marginRight: 10,
+    borderRadius: 6,
+    marginRight: 12,
+    marginTop: 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -310,8 +417,9 @@ const styles = StyleSheet.create({
   },
   checkboxText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: '#444',
+    lineHeight: 20,
   },
   link: {
     color: BRAND_COLOR,
@@ -319,19 +427,33 @@ const styles = StyleSheet.create({
   },
   signupBtn: {
     backgroundColor: BRAND_COLOR,
-    paddingVertical: 14,
-    borderRadius: 6,
+    paddingVertical: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: BRAND_COLOR,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  signupBtnLoading: {
+    opacity: 0.8,
   },
   signupText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },
+  signupIcon: {
+    marginLeft: 8,
+  },
   bottomText: {
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: 15,
     color: '#555',
+    marginBottom: 16,
   },
 });

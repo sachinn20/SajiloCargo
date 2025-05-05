@@ -56,11 +56,11 @@ const OpenStreetMapAutocomplete = ({ placeholder, onSelect }) => {
                 key={item.place_id}
                 style={styles.suggestion}
                 onPress={() => {
-                  const city = item.display_name.split(',')[0].trim();
-                  onSelect(city);
-                  setQuery(city);
+                  onSelect(item.display_name);     // keep full name
+                  setQuery(item.display_name);     // show full name
                   setResults([]);
                 }}
+                
               >
                 <Ionicons name="location-outline" size={16} color={BRAND_COLOR} style={styles.locationIcon} />
                 <Text style={styles.suggestionText}>{item.display_name}</Text>

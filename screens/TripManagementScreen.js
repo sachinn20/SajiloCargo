@@ -743,7 +743,11 @@ const styles = StyleSheet.create({
     fontSize: 15, 
     fontWeight: '600',
     color: '#333',
+    flexShrink: 1,
+    flexWrap: 'wrap',
+    maxWidth: 120   
   },
+  
   tripInfoContainer: {
     backgroundColor: '#f9f9f9',
     borderRadius: 12,
