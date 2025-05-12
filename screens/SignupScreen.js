@@ -238,9 +238,15 @@ const SignupScreen = ({ navigation }) => {
               </TouchableOpacity>
               <Text style={styles.checkboxText}>
                 By ticking this box, you agree to our{' '}
-                <Text style={styles.link}>Terms and conditions</Text> and{' '}
-                <Text style={styles.link}>privacy policy</Text>
+                <Text style={styles.link} onPress={() => navigation.navigate('Terms')}>
+                  Terms and Conditions
+                </Text>{' '}
+                and{' '}
+                <Text style={styles.link} onPress={() => navigation.navigate('Privacy')}>
+                  Privacy Policy
+                </Text>.
               </Text>
+
             </View>
             {errors.agreed && <Text style={styles.error}>{errors.agreed}</Text>}
           </View>

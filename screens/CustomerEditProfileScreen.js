@@ -11,7 +11,8 @@ import {
   ScrollView,
   Image,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Modal
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -31,6 +32,7 @@ const CustomerEditProfileScreen = ({ navigation }) => {
   const [profileImage, setProfileImage] = useState(null);
   const [initialProfileImage, setInitialProfileImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -103,13 +105,22 @@ const CustomerEditProfileScreen = ({ navigation }) => {
       });
 
       Alert.alert('Success', response.data.message || 'Profile updated.');
-      navigation.goBack();
+      navigation.navigate('Cus');
     } catch (err) {
       console.error('Update error:', err.response?.data || err);
       Alert.alert('Error', 'Failed to update profile.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleMenu = () => {
+    setMenuVisible(!menuVisible);
+  };
+
+  const navigateToChangePassword = () => {
+    setMenuVisible(false);
+    navigation.navigate('ChangePassword');
   };
 
   return (
@@ -127,8 +138,38 @@ const CustomerEditProfileScreen = ({ navigation }) => {
             <Ionicons name="arrow-back" size={22} color="#555" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Personal Information</Text>
-          <View style={{ width: 40 }} />
+          <TouchableOpacity 
+            style={styles.menuButton} 
+            onPress={toggleMenu}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="ellipsis-vertical" size={22} color="#555" />
+          </TouchableOpacity>
         </View>
+
+        {/* Menu Modal */}
+        <Modal
+          transparent={true}
+          visible={menuVisible}
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setMenuVisible(false)}
+          >
+            <View style={styles.menuContainer}>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={navigateToChangePassword}
+              >
+                <Ionicons name="key-outline" size={20} color="#555" style={styles.menuIcon} />
+                <Text style={styles.menuText}>Change Password</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
         <ScrollView 
           contentContainerStyle={styles.container}
@@ -260,6 +301,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -421,5 +470,45 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     fontWeight: '500',
+  },
+  
+  // Menu Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 70,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 8,
+    width: 200,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  menuIcon: {
+    marginRight: 12,
+  },
+  menuText: {
+    fontSize: 16,
+    color: '#333',
   },
 });

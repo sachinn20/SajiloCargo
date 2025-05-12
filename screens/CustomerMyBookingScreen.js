@@ -247,6 +247,10 @@ const CustomerMyBookingScreen = ({ navigation }) => {
                   <Text style={styles.packageLabel}>Amount</Text>
                   <Text style={styles.packageValue}>NPR {selectedBooking?.amount}</Text>
                 </View>
+                <View style={styles.packageItem}>
+                  <Text style={styles.packageLabel}>Payment Method</Text>
+                  <Text style={styles.packageValue}>{selectedBooking?.payment_mode}</Text>
+                </View>
               </View>
   
               {selectedBooking?.notes && (
@@ -335,16 +339,45 @@ const CustomerMyBookingScreen = ({ navigation }) => {
                   </Text>
                 </View>
               ) : (
-                (item.status !== 'pending' && item.status !== 'rejected' && item.status !== 'cancelled') && (
-                  <TouchableOpacity
-                    style={styles.payNowButton}
-                    onPress={() =>
-                      navigation.navigate('PaymentOptions', { bookingId: item.id })
-                    }
-                  >
-                    <Icon name="wallet-outline" size={14} color="#fff" />
-                    <Text style={styles.payNowText}>Pay Now</Text>
-                  </TouchableOpacity>
+                (item.status === 'accepted') ? (
+                  item.payment_mode === 'cash' ? (
+                    <View style={styles.codBadge}>
+                      <Icon name="cash-outline" size={14} color="#856404" />
+                      <Text style={styles.codText}>Cash on delivery</Text>
+                    </View>
+                  ) : item.payment_mode === 'khalti' ? (
+                    <TouchableOpacity
+                      style={styles.payNowButton}
+                      onPress={() =>
+                        navigation.navigate('PaymentOptions', { bookingId: item.id })
+                      }
+                    >
+                      <Icon name="wallet-outline" size={14} color="#fff" />
+                      <Text style={styles.payNowText}>Pay Now</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.payNowButton}
+                      onPress={() =>
+                        navigation.navigate('PaymentOptions', { bookingId: item.id })
+                      }
+                    >
+                      <Icon name="wallet-outline" size={14} color="#fff" />
+                      <Text style={styles.payNowText}>Pay Now</Text>
+                    </TouchableOpacity>
+                  )
+                ) : (
+                  (item.status !== 'pending' && item.status !== 'rejected' && item.status !== 'cancelled') && (
+                    <TouchableOpacity
+                      style={styles.payNowButton}
+                      onPress={() =>
+                        navigation.navigate('PaymentOptions', { bookingId: item.id })
+                      }
+                    >
+                      <Icon name="wallet-outline" size={14} color="#fff" />
+                      <Text style={styles.payNowText}>Pay Now</Text>
+                    </TouchableOpacity>
+                  )
                 )
               )}
             </View>
@@ -580,8 +613,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 2,
-  }
-,  
+  },  
   detailBox: { 
     width: '90%', 
     maxHeight: '85%', 
@@ -824,6 +856,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 4,
   },
+  codBadge: { 
+    backgroundColor: '#fff3cd', 
+    paddingVertical: 6, 
+    paddingHorizontal: 12, 
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  codText: { 
+    color: '#856404', 
+    fontSize: 12, 
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -868,5 +914,4 @@ const styles = StyleSheet.create({
   detailScrollBox: {
     flexGrow: 1,
   },
-  
 });

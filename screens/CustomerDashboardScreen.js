@@ -113,30 +113,6 @@ const CustomerDashboardScreen = () => {
           </View>
         </LinearGradient>
 
-        {/* Promo Banners */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.sectionTitle}>Special for you</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.specialContainer}
-          >
-            <View style={styles.promoCard}>
-              <Image source={require('../assets/icon.png')} style={styles.banner} />
-              <View style={styles.promoOverlay}>
-                <Text style={styles.promoTitle}>Special Offer</Text>
-                <Text style={styles.promoText}>Limited time discount on deliveries</Text>
-              </View>
-            </View>
-            <View style={styles.promoCard}>
-              <Image source={require('../assets/icon.png')} style={styles.banner} />
-              <View style={styles.promoOverlay}>
-                <Text style={styles.promoTitle}>New Service</Text>
-                <Text style={styles.promoText}>Try our premium delivery options</Text>
-              </View>
-            </View>
-          </ScrollView>
-        </View>
 
         {/* Action Grid */}
         <View style={styles.statsContainer}>
@@ -330,45 +306,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
     color: '#333',
-  },
-  specialContainer: {
-    paddingRight: 20,
-  },
-  promoCard: {
-    width: 280,
-    height: 140,
-    borderRadius: 16,
-    marginRight: 16,
-    overflow: 'hidden',
-    position: 'relative',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  banner: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  promoOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 12,
-  },
-  promoTitle: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  promoText: {
-    color: '#e0e0e0',
-    fontSize: 12,
   },
   grid: {
     flexDirection: 'row',

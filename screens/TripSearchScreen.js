@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet,
   TouchableOpacity, ScrollView, Alert, Platform,
@@ -10,6 +10,36 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from '../utils/axiosInstance';
 import { BRAND_COLOR } from './config';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
+const getCoordinates = async (placeName) => {
+  try {
+    const res = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${placeName}`);
+    if (res.data.length > 0) {
+      return {
+        lat: parseFloat(res.data[0].lat),
+        lon: parseFloat(res.data[0].lon),
+      };
+    }
+    return null;
+  } catch (err) {
+    console.log('Coordinate fetch error:', err);
+    return null;
+  }
+};
+
+const haversineDistance = (coord1, coord2) => {
+  const toRad = (x) => (x * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(coord2.lat - coord1.lat);
+  const dLon = toRad(coord2.lon - coord1.lon);
+
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) *
+    Math.sin(dLon / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 const OpenStreetMapAutocomplete = ({ placeholder, onSelect }) => {
   const [query, setQuery] = useState('');
@@ -74,6 +104,9 @@ const OpenStreetMapAutocomplete = ({ placeholder, onSelect }) => {
   );
 };
 
+
+
+
 const TripSearchScreen = ({ navigation }) => {
   const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('');
@@ -85,10 +118,12 @@ const TripSearchScreen = ({ navigation }) => {
   const [weight, setWeight] = useState('');
   const [worth, setWorth] = useState('');
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('1000');
+  const [amount, setAmount] = useState('');
+  const [distance, setDistance] = useState(null);
   const [noOfPackages, setNoOfPackages] = useState('1');
   const [receiverName, setReceiverName] = useState('');
   const [receiverNumber, setReceiverNumber] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // Default to cash
 
   const showDatePicker = () => setDatePickerVisibility(true);
   const hideDatePicker = () => setDatePickerVisibility(false);
@@ -97,28 +132,86 @@ const TripSearchScreen = ({ navigation }) => {
     hideDatePicker();
   };
 
+  const [pricePerKm, setPricePerKm] = useState(null);
+  const [pricePerKg, setPricePerKg] = useState(null);
+
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const res = await axios.get('/pricing');
+        setPricePerKm(parseFloat(res.data.price_per_km));
+        setPricePerKg(parseFloat(res.data.price_per_kg));
+      } catch (err) {
+        console.log('Error fetching pricing:', err?.response?.data || err.message);
+      }
+    };
+
+    fetchPricing();
+  }, []);
+
+  // Calculate price when fromLocation, toLocation, and weight change
+  useEffect(() => {
+    const calculatePrice = async () => {
+      if (!fromLocation || !toLocation || !weight) return;
+      
+      try {
+        const fromCoords = await getCoordinates(fromLocation);
+        const toCoords = await getCoordinates(toLocation);
+        
+        if (!fromCoords || !toCoords) return;
+        
+        const calculatedDistance = haversineDistance(fromCoords, toCoords);
+        setDistance(calculatedDistance);
+        
+        const parsedWeight = parseFloat(weight);
+        const baseRatePerKm = pricePerKm || 0;
+        const weightRate = pricePerKg || 0;
+
+        const calculatedAmount = Math.round(baseRatePerKm * calculatedDistance + weightRate * parsedWeight);
+        setAmount(String(calculatedAmount));
+      } catch (err) {
+        console.log('Error calculating price:', err);
+      }
+    };
+    
+    calculatePrice();
+  }, [fromLocation, toLocation, weight]);
+
   const handleSearch = async () => {
-    if (!fromLocation || !toLocation || !date || !shipmentType) {
+    if (!fromLocation || !toLocation || !date || !shipmentType || !weight) {
       Alert.alert('Error', 'Please fill all required fields.');
       return;
     }
-  
-    const searchPayload = {
-      from_location: fromLocation,
-      to_location: toLocation,
-      date: date.toISOString().split('T')[0],
-      shipment_type: shipmentType,
-    };
-  
-    // Add capacity filter only if weight is provided and valid
-    if (weight && !isNaN(parseFloat(weight))) {
-      searchPayload.capacity = parseFloat(weight);
-    }
-  
+
     try {
+      const fromCoords = await getCoordinates(fromLocation);
+      const toCoords = await getCoordinates(toLocation);
+
+      if (!fromCoords || !toCoords) {
+        Alert.alert('Error', 'Unable to calculate distance for the given locations.');
+        return;
+      }
+
+      const distance = haversineDistance(fromCoords, toCoords);
+      const parsedWeight = parseFloat(weight);
+
+      const baseRatePerKm = pricePerKm || 0;
+      const weightRate = pricePerKg || 0;
+
+
+      const calculatedAmount = Math.round(baseRatePerKm * distance + weightRate * parsedWeight);
+      setAmount(String(calculatedAmount));
+
+      const searchPayload = {
+        from_location: fromLocation,
+        to_location: toLocation,
+        date: date.toISOString().split('T')[0],
+        shipment_type: shipmentType,
+        capacity: parsedWeight
+      };
+
       const response = await axios.post('/trips/search', searchPayload);
-      console.log('Trips from backend:', response.data);
-  
+
       navigation.navigate('SearchResults', {
         trips: response.data,
         packageDetails: {
@@ -127,15 +220,16 @@ const TripSearchScreen = ({ navigation }) => {
           worth,
           description,
           shipmentType,
-          amount,
+          amount: calculatedAmount,
           noOfPackages,
           receiverName,
-          receiverNumber
+          receiverNumber,
+          paymentMethod // Include payment method in package details
         }
       });
     } catch (err) {
       console.log('Trip search error:', err?.response?.data || err.message);
-      Alert.alert('Error', 'No matching trips found or failed to search.');
+      Alert.alert('Error', 'Trip search failed or no matching trips found.');
     }
   };
 
@@ -327,17 +421,24 @@ const TripSearchScreen = ({ navigation }) => {
               </View>
 
               <Text style={styles.label}>Receiver's Phone Number</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="call-outline" size={20} color="#777" style={styles.inputIcon} />
-                <TextInput 
-                  style={styles.textInput} 
-                  value={receiverNumber} 
-                  onChangeText={setReceiverNumber} 
-                  keyboardType="phone-pad" 
-                  placeholder="Enter receiver's phone"
-                  placeholderTextColor="#888"
-                />
-              </View>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="call-outline" size={20} color="#777" style={styles.inputIcon} />
+                  <TextInput 
+                    style={styles.textInput} 
+                    value={receiverNumber} 
+                    onChangeText={(text) => {
+                      if (text.length <= 10) setReceiverNumber(text); // Limit to 10 digits
+                    }}
+                    keyboardType="phone-pad" 
+                    placeholder="Enter receiver's phone"
+                    placeholderTextColor="#888"
+                    maxLength={10}
+                  />
+                </View>
+                {receiverNumber.length > 0 && receiverNumber.length < 10 && (
+                  <Text style={styles.errorText}>Phone number must be atleast 10 digits</Text>
+                )}
+
 
               <Text style={styles.label}>Package Description</Text>
               <View style={[styles.inputContainer, { height: 100, alignItems: 'flex-start', paddingTop: 12 }]}>
@@ -353,9 +454,75 @@ const TripSearchScreen = ({ navigation }) => {
               </View>
             </View>
 
+            {/* Price and Payment Method Display */}
+            {(amount || distance) && (
+              <View style={styles.priceContainer}>
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Estimated Price:</Text>
+                  <Text style={styles.priceValue}>
+                    {amount ? `NPR ${amount}` : 'Will be calculated'}
+                  </Text>
+                  {distance && (
+                    <Text style={styles.distanceText}>
+                      Distance: {distance.toFixed(2)} km
+                    </Text>
+                  )}
+                </View>
+                
+                <View style={styles.paymentRow}>
+                  <Text style={styles.paymentLabel}>Payment Method:</Text>
+                  <View style={styles.paymentOptions}>
+                    <TouchableOpacity 
+                      style={[styles.paymentOption, paymentMethod === 'cash' && styles.selectedPaymentOption]} 
+                      onPress={() => setPaymentMethod('cash')}
+                    >
+                      <Ionicons 
+                        name="cash-outline" 
+                        size={16} 
+                        color={paymentMethod === 'cash' ? BRAND_COLOR : '#666'} 
+                        style={styles.paymentIcon}
+                      />
+                      <Text style={[
+                        styles.paymentText, 
+                        paymentMethod === 'cash' && styles.selectedPaymentText
+                      ]}>
+                        Cash
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={[styles.paymentOption, paymentMethod === 'khalti' && styles.selectedPaymentOption]} 
+                      onPress={() => setPaymentMethod('khalti')}
+                    >
+                      <Ionicons 
+                        name="phone-portrait-outline" 
+                        size={16} 
+                        color={paymentMethod === 'khalti' ? BRAND_COLOR : '#666'} 
+                        style={styles.paymentIcon}
+                      />
+                      <Text style={[
+                        styles.paymentText, 
+                        paymentMethod === 'khalti' && styles.selectedPaymentText
+                      ]}>
+                        Khalti
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                
+                {paymentMethod === 'khalti' && (
+                  <View style={styles.paymentInfoBox}>
+                    <Ionicons name="information-circle" size={14} color={BRAND_COLOR} style={{ marginRight: 6 }} />
+                    <Text style={styles.paymentInfoText}>
+                      You'll be able to pay via Khalti after your booking is accepted.
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
             <TouchableOpacity style={styles.button} onPress={handleSearch}>
               <Text style={styles.buttonText}>Search Available Trips</Text>
-              <Ionicons name="search" size={20} color="#fff" style={styles.buttonIcon} />
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -588,6 +755,9 @@ const styles = StyleSheet.create({
   unselectedText: { 
     color: '#333' 
   },
+  errorText:{
+    color: '#FF0000',
+  },
   button: {
     backgroundColor: BRAND_COLOR,
     padding: 16,
@@ -611,5 +781,91 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginLeft: 4,
+  },
+  // Price and payment styles
+  priceContainer: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  priceRow: {
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  priceValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: BRAND_COLOR,
+  },
+  distanceText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 8,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  paymentLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+  },
+  paymentOptions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  paymentOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  selectedPaymentOption: {
+    borderColor: BRAND_COLOR,
+    backgroundColor: `${BRAND_COLOR}10`, // 10% opacity of brand color
+  },
+  paymentIcon: {
+    marginRight: 4,
+  },
+  paymentText: {
+    fontSize: 13,
+    color: '#555',
+    fontWeight: '500',
+  },
+  selectedPaymentText: {
+    color: BRAND_COLOR,
+    fontWeight: '600',
+  },
+  paymentInfoBox: {
+    backgroundColor: `${BRAND_COLOR}10`,
+    borderRadius: 6,
+    padding: 10,
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  paymentInfoText: {
+    fontSize: 12,
+    color: '#555',
+    flex: 1,
+    lineHeight: 16,
   },
 });

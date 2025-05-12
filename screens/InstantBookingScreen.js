@@ -9,6 +9,102 @@ import * as Location from 'expo-location';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BRAND_COLOR } from './config';
+import axios from '../utils/axiosInstance';
+
+// OpenStreetMap Autocomplete Component (only for dropoff)
+const OpenStreetMapAutocomplete = ({ placeholder, onSelect }) => {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const searchLocations = async (text) => {
+    setQuery(text);
+    if (text.length < 3) {
+      setResults([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&countrycodes=np&q=${text}`
+      );
+      setResults(response.data);
+    } catch (error) {
+      console.log('Location search error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <View>
+      <View style={styles.inputContainer}>
+        <Ionicons name="location-outline" size={20} color="#777" style={styles.inputIcon} />
+        <TextInput
+          style={styles.autocompleteInput}
+          placeholder={placeholder}
+          value={query}
+          onChangeText={searchLocations}
+          placeholderTextColor="#888"
+        />
+        {loading && <ActivityIndicator size="small" color={BRAND_COLOR} style={{ marginRight: 10 }} />}
+      </View>
+      
+      {results.length > 0 && (
+        <View style={styles.suggestionsContainer}>
+          <ScrollView style={{ maxHeight: 150 }} keyboardShouldPersistTaps="handled">
+            {results.map((item) => (
+              <TouchableOpacity
+                key={item.place_id}
+                style={styles.suggestion}
+                onPress={() => {
+                  onSelect(item.display_name);
+                  setQuery(item.display_name);
+                  setResults([]);
+                }}
+              >
+                <Ionicons name="location-outline" size={16} color={BRAND_COLOR} style={styles.locationIcon} />
+                <Text style={styles.suggestionText}>{item.display_name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+};
+
+// Helper functions for coordinates and distance calculation
+const getCoordinates = async (placeName) => {
+  try {
+    const res = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${placeName}`);
+    if (res.data.length > 0) {
+      return {
+        lat: parseFloat(res.data[0].lat),
+        lon: parseFloat(res.data[0].lon),
+      };
+    }
+    return null;
+  } catch (err) {
+    console.log('Coordinate fetch error:', err);
+    return null;
+  }
+};
+
+const haversineDistance = (coord1, coord2) => {
+  const toRad = (x) => (x * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(coord2.lat - coord1.lat);
+  const dLon = toRad(coord2.lon - coord1.lon);
+
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) *
+    Math.sin(dLon / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 const InstantBookingScreen = () => {
   const navigation = useNavigation();
@@ -21,6 +117,13 @@ const InstantBookingScreen = () => {
   const [notes, setNotes] = useState('');
   const [location, setLocation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [price, setPrice] = useState('');
+  const [distance, setDistance] = useState(null);
+  const [pickupCoords, setPickupCoords] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // Default to cash
+
+  const [pricePerKm, setPricePerKm] = useState(null);
+  const [pricePerKg, setPricePerKg] = useState(null);
 
   // 📍 Get location + autofill pickup
   useEffect(() => {
@@ -36,8 +139,18 @@ const InstantBookingScreen = () => {
 
         const loc = await Location.getCurrentPositionAsync({});
         setLocation(loc.coords);
+        
+        // Store pickup coordinates for distance calculation
+        setPickupCoords({
+          lat: loc.coords.latitude,
+          lon: loc.coords.longitude
+        });
 
-        const address = await Location.reverseGeocodeAsync(loc.coords);
+        const address = await Location.reverseGeocodeAsync({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude
+        });
+        
         if (address.length > 0) {
           const addr = address[0];
           const formatted = `${addr.name || ''}, ${addr.street || ''}, ${addr.city || addr.region || ''}`;
@@ -52,7 +165,49 @@ const InstantBookingScreen = () => {
     })();
   }, []);
 
-  const handleSearch = () => {
+
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const res = await axios.get('/pricing'); // ✅ Same API endpoint
+        setPricePerKm(parseFloat(res.data.price_per_km));
+        setPricePerKg(parseFloat(res.data.price_per_kg));
+      } catch (err) {
+        console.log('Error fetching pricing:', err?.response?.data || err.message);
+      }
+    };
+
+    fetchPricing();
+  }, []);
+
+
+  // Calculate price when weight and dropoff change
+  useEffect(() => {
+    const calculatePrice = async () => {
+      if (!pickup || !dropoff || !weight || !pickupCoords) return;
+      
+      try {
+        const dropoffCoords = await getCoordinates(dropoff);
+        
+        if (!dropoffCoords) return;
+        
+        const calculatedDistance = haversineDistance(pickupCoords, dropoffCoords);
+        setDistance(calculatedDistance);
+        
+        const parsedWeight = parseFloat(weight);
+        const baseRatePerKm = pricePerKm || 0; // 👈 Use fetched value
+        const weightRate = pricePerKg || 0;  
+        const calculatedPrice = Math.round(baseRatePerKm * calculatedDistance + weightRate * parsedWeight);
+        setPrice(String(calculatedPrice));
+      } catch (err) {
+        console.log('Error calculating price:', err);
+      }
+    };
+    
+    calculatePrice();
+  }, [pickup, dropoff, weight, pickupCoords]);
+
+  const handleSearch = async () => {
     if (!pickup || !dropoff || !weight || !receiverName || !receiverNumber) {
       return Alert.alert('Validation Error', 'Please fill in all required fields.');
     }
@@ -61,22 +216,48 @@ const InstantBookingScreen = () => {
       return Alert.alert('Invalid Phone', 'Receiver number must be exactly 10 digits.');
     }
 
-    if (!location) {
-      return Alert.alert('Location Error', 'Could not detect your current location.');
+    if (!pickupCoords) {
+      return Alert.alert('Error', 'Could not detect your current location.');
     }
 
-    navigation.navigate('InstantResults', {
-        coords: location, // 👈 passed from GPS
+    try {
+      // Get coordinates for dropoff location
+      const dropoffCoords = await getCoordinates(dropoff);
+
+      if (!dropoffCoords) {
+        return Alert.alert('Error', 'Unable to calculate distance for the given destination.');
+      }
+
+      // Calculate distance
+      const calculatedDistance = haversineDistance(pickupCoords, dropoffCoords);
+      setDistance(calculatedDistance);
+
+      // Calculate price based on distance and weight
+      const parsedWeight = parseFloat(weight);
+      const baseRatePerKm = pricePerKm || 0; // 👈 Use fetched value
+      const weightRate = pricePerKg || 0;  
+      const calculatedPrice = Math.round(baseRatePerKm * calculatedDistance + weightRate * parsedWeight);
+      setPrice(String(calculatedPrice));
+
+      navigation.navigate('InstantResults', {
+        coords: location,
         bookingDetails: {
           pickup,
           dropoff,
           weight,
           receiverName,
           receiverNumber,
-          notes
+          notes,
+          distance: calculatedDistance,
+          amount: parseFloat(price), // ✅ use existing price state
+          paymentMethod
         }
       });
-      
+
+    } catch (err) {
+      console.log('Error calculating distance/price:', err);
+      Alert.alert('Error', 'Failed to calculate distance and price.');
+    }
   };
 
   return (
@@ -143,7 +324,7 @@ const InstantBookingScreen = () => {
                           style={styles.textInput}
                           value={pickup}
                           onChangeText={setPickup}
-                          placeholder="Auto-filled or editable"
+                          placeholder="Auto-filled with your location"
                           placeholderTextColor="#888"
                         />
                       )}
@@ -152,16 +333,10 @@ const InstantBookingScreen = () => {
                   
                   <View style={styles.inputWrapper}>
                     <Text style={styles.label}>Drop-off Address</Text>
-                    <View style={styles.inputContainer}>
-                      <Ionicons name="location-outline" size={20} color="#777" style={styles.inputIcon} />
-                      <TextInput
-                        style={styles.textInput}
-                        value={dropoff}
-                        onChangeText={setDropoff}
-                        placeholder="Enter destination address"
-                        placeholderTextColor="#888"
-                      />
-                    </View>
+                    <OpenStreetMapAutocomplete 
+                      placeholder="Enter destination address" 
+                      onSelect={setDropoff} 
+                    />
                   </View>
                 </View>
               </View>
@@ -229,6 +404,112 @@ const InstantBookingScreen = () => {
                 />
               </View>
             </View>
+
+            {/* Payment Method Section */}
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>
+                <Ionicons name="wallet-outline" size={18} color={BRAND_COLOR} style={{ marginRight: 6 }} />
+                Payment Method
+              </Text>
+              
+              <View style={styles.paymentOptions}>
+                <TouchableOpacity 
+                  style={[
+                    styles.paymentOption, 
+                    paymentMethod === 'cash' && styles.selectedPaymentOption
+                  ]}
+                  onPress={() => setPaymentMethod('cash')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.paymentIconContainer}>
+                    <Ionicons 
+                      name="cash-outline" 
+                      size={24} 
+                      color={paymentMethod === 'cash' ? '#fff' : '#666'} 
+                    />
+                  </View>
+                  <View style={styles.paymentTextContainer}>
+                    <Text style={[
+                      styles.paymentTitle,
+                      paymentMethod === 'cash' && styles.selectedPaymentText
+                    ]}>
+                      Cash on Delivery
+                    </Text>
+                    <Text style={styles.paymentDescription}>
+                      Pay with cash when your package is delivered
+                    </Text>
+                  </View>
+                  <View style={styles.radioContainer}>
+                    <View style={[
+                      styles.radioOuter,
+                      paymentMethod === 'cash' && styles.radioOuterSelected
+                    ]}>
+                      {paymentMethod === 'cash' && <View style={styles.radioInner} />}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[
+                    styles.paymentOption, 
+                    paymentMethod === 'khalti' && styles.selectedPaymentOption
+                  ]}
+                  onPress={() => setPaymentMethod('khalti')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.paymentIconContainer}>
+                    <Ionicons 
+                      name="phone-portrait-outline" 
+                      size={24} 
+                      color={paymentMethod === 'khalti' ? '#fff' : '#666'} 
+                    />
+                  </View>
+                  <View style={styles.paymentTextContainer}>
+                    <Text style={[
+                      styles.paymentTitle,
+                      paymentMethod === 'khalti' && styles.selectedPaymentText
+                    ]}>
+                      Pay with Khalti
+                    </Text>
+                    <Text style={styles.paymentDescription}>
+                      Pay securely via Khalti after booking is accepted
+                    </Text>
+                  </View>
+                  <View style={styles.radioContainer}>
+                    <View style={[
+                      styles.radioOuter,
+                      paymentMethod === 'khalti' && styles.radioOuterSelected
+                    ]}>
+                      {paymentMethod === 'khalti' && <View style={styles.radioInner} />}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {paymentMethod === 'khalti' && (
+                <View style={styles.paymentInfoBox}>
+                  <Ionicons name="information-circle" size={18} color={BRAND_COLOR} style={{ marginRight: 8 }} />
+                  <Text style={styles.paymentInfoText}>
+                    You'll be able to make the payment via Khalti after your booking is accepted by a vehicle owner.
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Price and Distance Display */}
+            {(price || distance) && (
+              <View style={styles.priceContainer}>
+                <Text style={styles.priceLabel}>Estimated Price:</Text>
+                <Text style={styles.priceValue}>
+                  {price ? `NPR ${price}` : 'Will be calculated'}
+                </Text>
+                {distance && (
+                  <Text style={styles.distanceText}>
+                    Distance: {distance.toFixed(2)} km
+                  </Text>
+                )}
+              </View>
+            )}
 
             <TouchableOpacity 
               style={styles.button} 
@@ -436,5 +717,147 @@ const styles = StyleSheet.create({
     color: '#666',
     flex: 1,
     lineHeight: 18,
+  },
+  // Payment method styles
+  paymentOptions: {
+    marginTop: 8,
+  },
+  paymentOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+  },
+  selectedPaymentOption: {
+    borderColor: BRAND_COLOR,
+    backgroundColor: `${BRAND_COLOR}10`, // 10% opacity of brand color
+  },
+  paymentIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  paymentTextContainer: {
+    flex: 1,
+  },
+  paymentTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  selectedPaymentText: {
+    color: BRAND_COLOR,
+  },
+  paymentDescription: {
+    fontSize: 12,
+    color: '#777',
+  },
+  radioContainer: {
+    width: 24,
+    alignItems: 'center',
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioOuterSelected: {
+    borderColor: BRAND_COLOR,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: BRAND_COLOR,
+  },
+  paymentInfoBox: {
+    backgroundColor: `${BRAND_COLOR}10`,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 4,
+    flexDirection: 'row',
+    borderLeftWidth: 3,
+    borderLeftColor: BRAND_COLOR,
+  },
+  paymentInfoText: {
+    fontSize: 13,
+    color: '#555',
+    flex: 1,
+    lineHeight: 18,
+  },
+  // Autocomplete styles
+  autocompleteInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#333',
+    height: 46,
+  },
+  suggestionsContainer: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    marginTop: -12,
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 1000,
+  },
+  suggestion: { 
+    padding: 12, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#f0f0f0',
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  suggestionText: {
+    color: '#333',
+    fontSize: 14,
+    flex: 1,
+  },
+  locationIcon: {
+    marginRight: 8,
+  },
+  // Price display styles
+  priceContainer: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    alignItems: 'center',
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  priceValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: BRAND_COLOR,
+  },
+  distanceText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 8,
   },
 });

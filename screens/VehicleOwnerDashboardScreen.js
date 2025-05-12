@@ -17,6 +17,7 @@ const VehicleOwnerDashboardScreen = ({ navigation }) => {
   const [bookingStats, setBookingStats] = useState({ ongoing: 0, completed: 0 });
   const [vehicleTotal, setVehicleTotal] = useState(0);
   const [tripCount, setTripCount] = useState({ scheduled: 0, completed: 0 });
+  const [totalEarnings, setTotalEarnings] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
 
@@ -32,12 +33,16 @@ const VehicleOwnerDashboardScreen = ({ navigation }) => {
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
-      const [profileRes, bookingsRes, vehiclesRes, tripsRes] = await Promise.all([
-        axios.get('/profile', { headers }),
-        axios.get('/received-bookings', { headers }),
-        axios.get('/vehicles', { headers }),
-        axios.get('/trips', { headers }),
-      ]);
+      const [profileRes, bookingsRes, vehiclesRes, tripsRes, earningsRes] = await Promise.all([
+      axios.get('/profile', { headers }),
+      axios.get('/received-bookings', { headers }),
+      axios.get('/vehicles', { headers }),
+      axios.get('/trips', { headers }),
+      axios.get('/earnings', { headers }), // 👈 new
+    ]);
+
+    setTotalEarnings(earningsRes.data.total || 0);
+
 
       const user = profileRes.data.data;
       setUserName(user.name || 'Vehicle Owner');
@@ -152,8 +157,8 @@ const VehicleOwnerDashboardScreen = ({ navigation }) => {
               </View>
               <View style={styles.cardContent}>
                 <Text style={styles.cardTitle}>Earnings</Text>
-                <Text style={styles.cardValue}>NPR 48,300</Text>
-                <Text style={styles.cardText}>this month</Text>
+                <Text style={styles.cardValue}>NPR {totalEarnings.toLocaleString()}</Text>
+                
               </View>
             </TouchableOpacity>
 

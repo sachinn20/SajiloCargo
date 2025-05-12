@@ -100,12 +100,13 @@ const VehicleOwnerProfileScreen = ({ navigation }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <TouchableOpacity 
-          style={styles.settingsButton}
-          onPress={() => Alert.alert('Coming soon', 'Settings will be available soon.')}
+          style={[styles.settingsButton, { opacity: 0, pointerEvents: 'none' }]} // Invisible but still there
+          // onPress={() => Alert.alert('Coming soon', 'Settings will be available soon.')}
           activeOpacity={0.7}
         >
           <Ionicons name="settings-outline" size={22} color="" />
         </TouchableOpacity>
+
       </LinearGradient>
 
       <ScrollView 
@@ -212,18 +213,18 @@ const VehicleOwnerProfileScreen = ({ navigation }) => {
         
         {/* Settings Section */}
         <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>SETTINGS</Text>
+          <Text style={styles.sectionTitle}>APP INFORMATIONS</Text>
           <View style={styles.menuCard}>
-            <MenuItem 
-              icon="notifications" 
-              label="Notification Settings" 
-              onPress={() => Alert.alert('Coming soon', 'This feature will be available soon.')} 
+             <MenuItem 
+              icon="file-tray-full" 
+              label="Terms and Conditions" 
+              onPress={() => navigation.navigate('Terms')} 
               iconColor="#F44336"
             />
             <MenuItem 
-              icon="card" 
-              label="Bank & Payment Info" 
-              onPress={() => Alert.alert('Coming soon', 'This feature will be available soon.')} 
+              icon="shield" 
+              label="Privacy Policy" 
+              onPress={() => navigation.navigate('Privacy')} 
               iconColor="#009688"
             />
             <MenuItem 

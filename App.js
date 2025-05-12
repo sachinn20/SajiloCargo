@@ -21,7 +21,6 @@ import NotificationScreen from './screens/NotificationScreen';
 
 import CustomerDashboardScreen from './screens/CustomerDashboardScreen';
 import TripSearchScreen from './screens/TripSearchScreen';
-import WalletScreen from './screens/WalletScreen';
 import TrackScreen from './screens/TrackScreen';
 import PackageInfoScreen from './screens/PackageInfoScreen';
 import ProfileScreen from './screens/ProfileScreen';
@@ -30,7 +29,15 @@ import InstantBookingScreen from './screens/InstantBookingScreen';
 import InstantResultsScreen from './screens/InstantResultsScreen';
 import CustomerEditProfileScreen from './screens/CustomerEditProfileScreen';
 import CustomerMyBookingScreen from './screens/CustomerMyBookingScreen';
-import CustomerBookingEditScreen from './screens/CustomerBookingEditScreen'; // adjust the path if needed
+import CustomerBookingEditScreen from './screens/CustomerBookingEditScreen';
+
+import ChangePasswordScreen from './screens/ChangePasswordScreen';
+import VehicleownerChangePasswordScreen from './screens/VehicleownerChangePasswordScreen';
+
+
+
+import TermsAndConditionsScreen from './screens/TermsAndConditionsScreen';
+import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 
 
 import VehicleOwnerTabs from './screens/VehicleOwnerTabs';
@@ -42,6 +49,7 @@ import OwnerBookingsScreen from './screens/OwnerBookingsScreen';
 import VehicleOwnerEditProfileScreen from './screens/VehicleOwnerEditProfileScreen';
 
 import PaymentOptionsScreen from './screens/PaymentOptionsScreen';
+import KhaltiPaymentWebView from './screens/KhaltiPaymentWebView';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -121,6 +129,9 @@ export default function App() {
               <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
               <Stack.Screen name="SetNewPassword" component={SetNewPasswordScreen} />
 
+              <Stack.Screen name="Terms" component={TermsAndConditionsScreen} />
+              <Stack.Screen name="Privacy" component={PrivacyPolicyScreen} />
+
 
 
               <Stack.Screen name="Notifications" component={NotificationScreen} />
@@ -137,6 +148,10 @@ export default function App() {
               <Stack.Screen name="MyBookings" component={CustomerMyBookingScreen} />
               <Stack.Screen name="EditBooking" component={CustomerBookingEditScreen} />
 
+              <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+               <Stack.Screen name="VehicleOwnerChangePassword" component={VehicleownerChangePasswordScreen} />
+
+
 
               <Stack.Screen name="OwnerDashboard" component={VehicleOwnerTabs} />
               <Stack.Screen name="VehicleManagement" component={VehicleManagementScreen} />
@@ -147,6 +162,7 @@ export default function App() {
               <Stack.Screen name="VehicleOwnerEditProfile" component={VehicleOwnerEditProfileScreen} />
 
               <Stack.Screen name="PaymentOptions" component={PaymentOptionsScreen} />
+              <Stack.Screen name="KhaltiPaymentWebView" component={KhaltiPaymentWebView} />
               
 
 

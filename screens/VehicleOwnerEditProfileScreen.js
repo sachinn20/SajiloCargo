@@ -1,18 +1,27 @@
+// customer/CustomerEditProfileScreen.js
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity, Alert,
-  ActivityIndicator, ScrollView, Image, Platform, KeyboardAvoidingView
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  Image,
+  Platform,
+  KeyboardAvoidingView,
+  Modal
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import axios from '../utils/axiosInstance';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BRAND_COLOR } from './config';
-import * as FileSystem from 'expo-file-system';
+import { BRAND_COLOR } from '../screens/config';
 
-
-const VehicleOwnerEditProfileScreen = ({ navigation }) => {
+const CustomerEditProfileScreen = ({ navigation }) => {
   const [form, setForm] = useState({
     name: '',
     phone_number: '',
@@ -23,6 +32,7 @@ const VehicleOwnerEditProfileScreen = ({ navigation }) => {
   const [profileImage, setProfileImage] = useState(null);
   const [initialProfileImage, setInitialProfileImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -41,7 +51,7 @@ const VehicleOwnerEditProfileScreen = ({ navigation }) => {
         setProfileImage(user.profile_photo_url || null);
         setInitialProfileImage(user.profile_photo_url || null);
       } catch (err) {
-        console.error('Error loading profile:', err);
+        console.error('Error loading user:', err);
       }
     };
     loadProfile();
@@ -54,27 +64,12 @@ const VehicleOwnerEditProfileScreen = ({ navigation }) => {
       quality: 0.7,
       base64: false,
     });
-  
+
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-  
-      try {
-        const fileInfo = await FileSystem.getInfoAsync(uri);
-        const sizeInMB = fileInfo.size / (1024 * 1024);
-  
-        if (sizeInMB > 5) {
-          Alert.alert('Image too large', 'Please select an image smaller than 5MB.');
-          return;
-        }
-  
-        setProfileImage(uri);
-      } catch (error) {
-        console.error('Error checking image size:', error);
-        Alert.alert('Error', 'Could not check image size. Please try again.');
-      }
+      setProfileImage(uri);
     }
   };
-  
 
   const handleUpdate = async () => {
     if (!form.name || !form.phone_number) {
@@ -92,11 +87,13 @@ const VehicleOwnerEditProfileScreen = ({ navigation }) => {
 
       if (profileImage && profileImage !== initialProfileImage && !profileImage.startsWith('http')) {
         const filename = profileImage.split('/').pop();
-        const ext = filename?.split('.').pop() || 'jpg';
+        const match = /\.(\w+)$/.exec(filename ?? '');
+        const ext = match?.[1] ?? 'jpg';
+
         formData.append('profile_photo', {
           uri: profileImage,
-          name: filename,
           type: `image/${ext}`,
+          name: filename,
         });
       }
 
@@ -108,13 +105,22 @@ const VehicleOwnerEditProfileScreen = ({ navigation }) => {
       });
 
       Alert.alert('Success', response.data.message || 'Profile updated.');
-      navigation.goBack();
+      navigation.navigate('Cus');
     } catch (err) {
       console.error('Update error:', err.response?.data || err);
       Alert.alert('Error', 'Failed to update profile.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleMenu = () => {
+    setMenuVisible(!menuVisible);
+  };
+
+  const navigateToChangePassword = () => {
+    setMenuVisible(false);
+    navigation.navigate('ChangePassword');
   };
 
   return (
@@ -129,11 +135,41 @@ const VehicleOwnerEditProfileScreen = ({ navigation }) => {
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={22} color="" />
+            <Ionicons name="arrow-back" size={22} color="#555" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Profile</Text>
-          <View style={{ width: 40 }} />
+          <Text style={styles.headerTitle}>Personal Information</Text>
+          <TouchableOpacity 
+            style={styles.menuButton} 
+            onPress={toggleMenu}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="ellipsis-vertical" size={22} color="#555" />
+          </TouchableOpacity>
         </View>
+
+        {/* Menu Modal */}
+        <Modal
+          transparent={true}
+          visible={menuVisible}
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setMenuVisible(false)}
+          >
+            <View style={styles.menuContainer}>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={navigateToChangePassword}
+              >
+                <Ionicons name="key-outline" size={20} color="#555" style={styles.menuIcon} />
+                <Text style={styles.menuText}>Change Password</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
         <ScrollView 
           contentContainerStyle={styles.container}
@@ -197,15 +233,8 @@ const VehicleOwnerEditProfileScreen = ({ navigation }) => {
                 <TextInput
                   style={styles.input}
                   keyboardType="phone-pad"
-                  maxLength={10}
                   value={form.phone_number}
-                  onChangeText={(text) => {
-                    // Allow only digits, max 10
-                    const digits = text.replace(/[^0-9]/g, '');
-                    if (digits.length <= 10) {
-                      setForm({ ...form, phone_number: digits });
-                    }
-                  }}
+                  onChangeText={(text) => setForm({ ...form, phone_number: text })}
                   placeholder="Enter your phone number"
                   placeholderTextColor="#aaa"
                 />
@@ -218,7 +247,7 @@ const VehicleOwnerEditProfileScreen = ({ navigation }) => {
                 <Ionicons name="briefcase" size={20} color="#999" style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, styles.readOnly]}
-                  value={form.role}
+                  value={form.role.charAt(0).toUpperCase() + form.role.slice(1)}
                   editable={false}
                   placeholder="Your role"
                   placeholderTextColor="#aaa"
@@ -257,7 +286,7 @@ const VehicleOwnerEditProfileScreen = ({ navigation }) => {
   );
 };
 
-export default VehicleOwnerEditProfileScreen;
+export default CustomerEditProfileScreen;
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -270,20 +299,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    // backgroundColor: BRAND_COLOR,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '',
+    color: '#333',
   },
   container: {
     padding: 20,
@@ -434,5 +470,45 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     fontWeight: '500',
+  },
+  
+  // Menu Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 70,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 8,
+    width: 200,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  menuIcon: {
+    marginRight: 12,
+  },
+  menuText: {
+    fontSize: 16,
+    color: '#333',
   },
 });

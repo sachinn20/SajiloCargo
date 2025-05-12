@@ -64,9 +64,14 @@ const InstantResultsScreen = ({ route, navigation }) => {
         receiver_name: bookingDetails.receiverName,
         receiver_number: bookingDetails.receiverNumber,
         notes: bookingDetails.notes,
+        amount: bookingDetails.amount, // ✅ add this line
+        payment_mode: bookingDetails.paymentMethod,
         latitude: coords.latitude,
         longitude: coords.longitude,
       });
+
+
+
 
       setShowModal(false);
       setBookingInfo(res.data);
@@ -139,6 +144,20 @@ const InstantResultsScreen = ({ route, navigation }) => {
       return <MaterialCommunityIcons name="van-utility" size={24} color="#fff" />;
     } else {
       return <MaterialCommunityIcons name="car" size={24} color="#fff" />;
+    }
+  };
+
+  // Helper function to format payment method display
+  const formatPaymentMethod = (method) => {
+    if (!method) return 'Not specified';
+    
+    switch(method.toLowerCase()) {
+      case 'khalti':
+        return 'Khalti (Online)';
+      case 'cash':
+        return 'Cash on Delivery';
+      default:
+        return method;
     }
   };
 
@@ -269,6 +288,15 @@ const InstantResultsScreen = ({ route, navigation }) => {
               {renderRow('Phone', bookingDetails.receiverNumber)}
             </View>
 
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionTitleContainer}>
+                <Ionicons name="cash-outline" size={18} color={BRAND_COLOR} style={styles.sectionIcon} />
+                <Text style={styles.sectionTitle}>Payment</Text>
+              </View>
+              {renderRow('Price', `Rs ${bookingDetails.amount || '0'}`)}
+              {renderRow('Payment Method', formatPaymentMethod(bookingDetails.paymentMethod))}
+            </View>
+
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.secondaryButton]}
@@ -336,7 +364,6 @@ const InstantResultsScreen = ({ route, navigation }) => {
               </View>
             </View>
 
-
             <View style={styles.successDetailsBox}>
               <View style={styles.sectionTitleContainer}>
                 <Ionicons name="information-circle-outline" size={18} color={BRAND_COLOR} style={styles.sectionIcon} />
@@ -349,6 +376,16 @@ const InstantResultsScreen = ({ route, navigation }) => {
               {renderRow('Phone', bookingInfo?.receiver_number || bookingDetails.receiverNumber)}
               {renderRow('Vehicle', `${selectedVehicle?.type} (${selectedVehicle?.plate})`)}
               {renderRow('Requested At', new Date().toLocaleString())}
+            </View>
+            
+            <View style={styles.paymentSummaryBox}>
+              <View style={styles.sectionTitleContainer}>
+                <Ionicons name="wallet-outline" size={18} color={BRAND_COLOR} style={styles.sectionIcon} />
+                <Text style={styles.sectionTitle}>Payment Details</Text>
+              </View>
+              {renderRow('Amount', `Rs ${bookingInfo?.amount || bookingDetails.amount || '0'}`)}
+              {renderRow('Payment Method', formatPaymentMethod(bookingInfo?.payment_method || bookingDetails.paymentMethod))}
+              {renderRow('Payment Status', bookingInfo?.is_paid ? 'Paid' : 'Pending')}
             </View>
 
             <TouchableOpacity
@@ -791,8 +828,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: '100%',
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#eaeaea',
+  },
+  paymentSummaryBox: {
+    backgroundColor: '#f0fff4',
+    borderRadius: 12,
+    width: '100%',
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#d1e7dd',
   },
 });
