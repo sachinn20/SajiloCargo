@@ -32,13 +32,24 @@ const PaymentOptionsScreen = ({ route, navigation }) => {
         setIsLoading(false);
       }
     } else {
-      navigation.navigate('KhaltiPaymentWebView', {
-        bookingId,
-      
-      });
-      
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        const res = await axios.post('/khalti/initiate', { booking_id: bookingId }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const paymentUrl = res.data.payment_url;
+        if (paymentUrl) {
+          Linking.openURL(paymentUrl);
+        } else {
+          Alert.alert('Error', 'Failed to retrieve Khalti payment URL.');
+        }
+      } catch (err) {
+        console.error(err.response?.data || err.message);
+        Alert.alert('Error', 'Could not start Khalti payment.');
+      } finally {
+        setIsLoading(false);
+      }
     }
-    
     
     
   };

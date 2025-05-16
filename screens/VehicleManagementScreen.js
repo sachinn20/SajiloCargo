@@ -1,4 +1,3 @@
-// === Updated VehicleManagementScreen.js with styled Edit Modal ===
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -14,14 +13,17 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import axios from '../utils/axiosInstance';
 import { BRAND_COLOR } from './config';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const VehicleManagementScreen = () => {
   const navigation = useNavigation();
@@ -57,21 +59,42 @@ const VehicleManagementScreen = () => {
   }, [isFocused]);
 
   const handleDelete = (id) => {
-    Alert.alert('Delete Vehicle', 'Are you sure you want to delete this vehicle?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          try {
-            await axios.delete(`/vehicles/${id}`);
-            Alert.alert('Deleted', 'Vehicle has been deleted.');
-            fetchVehicles();
-          } catch (error) {
-            console.log(error);
-            Alert.alert('Error', 'Could not delete the vehicle.');
+    Alert.alert(
+      'Delete Vehicle', 
+      'Are you sure you want to delete this vehicle? This action cannot be undone.', 
+      [
+        { 
+          text: 'Cancel', 
+          style: 'cancel',
+          onPress: () => {}
+        },
+        {
+          text: 'Delete', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              await axios.delete(`/vehicles/${id}`);
+              Alert.alert('Success', 'Vehicle has been successfully deleted from your fleet.');
+              fetchVehicles();
+            } catch (error) {
+              console.log(error);
+              Alert.alert('Error', 'Could not delete the vehicle. Please try again later.');
+            }
           }
-        }
-      },
-    ]);
+        },
+      ]
+    );
+  };
+
+  const handleMarkAsMaintained = async (vehicleId) => {
+    try {
+      await axios.post(`/vehicles/${vehicleId}/maintain`);
+      Alert.alert('Maintenance Complete', 'Vehicle has been successfully marked as maintained and is ready for service.');
+      fetchVehicles(); // refresh the list
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Maintenance Error', 'Failed to mark vehicle as maintained. Please try again later.');
+    }
   };
 
   const openEditModal = (vehicle) => {
@@ -93,17 +116,17 @@ const VehicleManagementScreen = () => {
   const handleEditSubmit = async () => {
     if (!editVehicle) return;
     if (!editForm.type || !editForm.capacity || !editForm.plate || !editForm.license) {
-      return Alert.alert('Validation', 'All required fields must be filled.');
+      return Alert.alert('Validation Error', 'Please fill in all required fields to update this vehicle.');
     }
     try {
       await axios.put(`/vehicles/${editVehicle.id}`, editForm);
-      Alert.alert('Updated', 'Vehicle updated successfully.');
+      Alert.alert('Update Successful', 'Vehicle information has been updated successfully.');
       setEditModalVisible(false);
       setEditVehicle(null);
       fetchVehicles();
     } catch (error) {
       console.log(error);
-      Alert.alert('Error', 'Could not update vehicle.');
+      Alert.alert('Update Failed', 'Could not update vehicle information. Please check your connection and try again.');
     }
   };
 
@@ -121,87 +144,196 @@ const VehicleManagementScreen = () => {
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.vehicleCard}>
-      <View style={styles.vehicleIconContainer}>
-        <MaterialCommunityIcons 
-          name={getVehicleIcon(item.type)} 
-          size={28} 
-          color={BRAND_COLOR} 
-        />
-      </View>
-      
-      <View style={styles.vehicleDetails}>
-        <View style={styles.vehicleHeaderRow}>
-          <Text style={styles.vehicleText}>{item.type}</Text>
-          <View style={styles.capacityBadge}>
-            <Text style={styles.capacityText}>{item.capacity} kg</Text>
+  const getMaintenanceStatus = (kmsRemaining, maintenanceDue) => {
+    if (maintenanceDue) {
+      return {
+        color: '#FF3B30',
+        text: 'Maintenance Required',
+        icon: 'tools',
+        bgColor: 'rgba(255, 59, 48, 0.1)'
+      };
+    } else if (kmsRemaining < 500) {
+      return {
+        color: '#FF9500',
+        text: 'Maintenance Soon',
+        icon: 'exclamation-triangle',
+        bgColor: 'rgba(255, 149, 0, 0.1)'
+      };
+    } else {
+      return {
+        color: '#34C759',
+        text: 'Good Condition',
+        icon: 'check-circle',
+        bgColor: 'rgba(52, 199, 89, 0.1)'
+      };
+    }
+  };
+
+  const renderItem = ({ item }) => {
+    const maintenanceStatus = getMaintenanceStatus(item.kms_remaining_to_maintenance, item.maintenance_due);
+    
+    return (
+      <View style={styles.vehicleCard}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.vehicleIconContainer, { backgroundColor: `${BRAND_COLOR}15` }]}>
+            <MaterialCommunityIcons 
+              name={getVehicleIcon(item.type)} 
+              size={28} 
+              color={BRAND_COLOR} 
+            />
+          </View>
+          
+          <View style={styles.headerInfo}>
+            <Text style={styles.vehicleText}>{item.type}</Text>
+            <View style={styles.capacityBadge}>
+              <Text style={styles.capacityText}>{item.capacity} kg</Text>
+            </View>
+          </View>
+          
+          <View style={styles.actionButtons}>
+            <TouchableOpacity 
+              onPress={() => openEditModal(item)} 
+              style={[styles.iconButton, styles.editButton]}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="create-outline" size={16} color="#fff" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={() => handleDelete(item.id)}
+              style={[styles.iconButton, styles.deleteButton]}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trash-outline" size={16} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
         
-        <View style={styles.infoRow}>
-          <Ionicons name="card-outline" size={14} color="#666" style={styles.infoIcon} />
-          <Text style={styles.vehicleSub}>Plate: {item.plate}</Text>
-        </View>
+        <View style={styles.divider} />
         
-        <View style={styles.infoRow}>
-          <Ionicons name="document-text-outline" size={14} color="#666" style={styles.infoIcon} />
-          <Text style={styles.vehicleSub}>License: {item.license}</Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Ionicons name="shield-checkmark-outline" size={14} color="#666" style={styles.infoIcon} />
-          {item.insurance ? (
-            <Text style={styles.vehicleSub}>Insurance: {item.insurance}</Text>
-          ) : (
-            <Text style={[styles.vehicleSub, { fontStyle: 'italic', color: '#999' }]}>No insurance info</Text>
-          )}
+        <View style={styles.vehicleDetails}>
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <View style={styles.detailIconContainer}>
+                <Ionicons name="card-outline" size={16} color={BRAND_COLOR} />
+              </View>
+              <View>
+                <Text style={styles.detailLabel}>Plate Number</Text>
+                <Text style={styles.detailValue}>{item.plate}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.detailItem}>
+              <View style={styles.detailIconContainer}>
+                <Ionicons name="document-text-outline" size={16} color={BRAND_COLOR} />
+              </View>
+              <View>
+                <Text style={styles.detailLabel}>License</Text>
+                <Text style={styles.detailValue}>{item.license}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.detailItem}>
+              <View style={styles.detailIconContainer}>
+                <Ionicons name="shield-checkmark-outline" size={16} color={BRAND_COLOR} />
+              </View>
+              <View>
+                <Text style={styles.detailLabel}>Insurance</Text>
+                <Text style={styles.detailValue}>
+                  {item.insurance || 'Not provided'}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.detailItem}>
+              <View style={styles.detailIconContainer}>
+                <Ionicons name="speedometer-outline" size={16} color={BRAND_COLOR} />
+              </View>
+              <View>
+                <Text style={styles.detailLabel}>Next Maintenance</Text>
+                <Text style={[styles.detailValue, { color: maintenanceStatus.color }]}>
+                  {item.kms_remaining_to_maintenance} km
+                </Text>
+              </View>
+            </View>
+          </View>
+          
+          <View style={[styles.maintenanceStatusContainer, { backgroundColor: maintenanceStatus.bgColor }]}>
+            <FontAwesome5 name={maintenanceStatus.icon} size={16} color={maintenanceStatus.color} />
+            <Text style={[styles.maintenanceStatusText, { color: maintenanceStatus.color }]}>
+              {maintenanceStatus.text}
+            </Text>
+            
+            {item.maintenance_due && (
+              <TouchableOpacity
+                onPress={() => handleMarkAsMaintained(item.id)}
+                style={styles.maintainButton}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#34C759', '#30B350']}
+                  style={styles.maintainButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Ionicons name="checkmark-circle-outline" size={16} color="#fff" style={{marginRight: 6}} />
+                  <Text style={styles.maintainButtonText}>Complete Maintenance</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
-      
-      <View style={styles.actionButtons}>
-        <TouchableOpacity 
-          onPress={() => openEditModal(item)} 
-          style={styles.editButton}
-        >
-          <Ionicons name="create-outline" size={18} color="#fff" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          onPress={() => handleDelete(item.id)}
-          style={styles.deleteButton}
-        >
-          <Ionicons name="trash-outline" size={18} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const EmptyListComponent = () => (
     <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons name="truck-fast-outline" size={60} color="#ddd" />
+      <View style={styles.emptyIconContainer}>
+        <MaterialCommunityIcons name="truck-fast-outline" size={60} color={BRAND_COLOR} />
+      </View>
       <Text style={styles.emptyText}>No vehicles found</Text>
       <Text style={styles.emptySubText}>Add your first vehicle to get started</Text>
       <TouchableOpacity
-        style={styles.emptyAddButton}
         onPress={() => navigation.navigate('AddVehicle')}
+        activeOpacity={0.8}
       >
-        <Text style={styles.emptyAddButtonText}>Add Vehicle</Text>
+        <LinearGradient
+          colors={[BRAND_COLOR, `${BRAND_COLOR}DD`]}
+          style={styles.emptyAddButton}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <Ionicons name="add-circle-outline" size={18} color="#fff" style={{marginRight: 8}} />
+          <Text style={styles.emptyAddButtonText}>Add Vehicle</Text>
+        </LinearGradient>
       </TouchableOpacity>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
           style={styles.backButton}
+          activeOpacity={0.7}
         >
           <Ionicons name="arrow-back-outline" size={22} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.title}>My Vehicles</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={fetchVehicles}>
+        
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.title}>My Vehicles</Text>
+          <Text style={styles.subtitle}>{vehicles.length} vehicles in your fleet</Text>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.refreshButton} 
+          onPress={fetchVehicles}
+          activeOpacity={0.7}
+        >
           <Ionicons name="refresh-outline" size={22} color="#333" />
         </TouchableOpacity>
       </View>
@@ -209,7 +341,7 @@ const VehicleManagementScreen = () => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={BRAND_COLOR} />
-          <Text style={styles.loadingText}>Loading vehicles...</Text>
+          <Text style={styles.loadingText}>Loading your fleet...</Text>
         </View>
       ) : (
         <FlatList
@@ -223,10 +355,17 @@ const VehicleManagementScreen = () => {
       )}
 
       <TouchableOpacity
-        style={styles.addButton}
+        activeOpacity={0.9}
         onPress={() => navigation.navigate('AddVehicle')}
       >
-        <Ionicons name="add" size={24} color="#fff" />
+        <LinearGradient
+          colors={[BRAND_COLOR, `${BRAND_COLOR}DD`]}
+          style={styles.addButton}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Ionicons name="add" size={24} color="#fff" />
+        </LinearGradient>
       </TouchableOpacity>
 
       {/* Edit Vehicle Modal */}
@@ -238,12 +377,19 @@ const VehicleManagementScreen = () => {
         >
           <View style={styles.modalContainer}>
             {/* Header */}
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Vehicle</Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#333" />
+            <LinearGradient
+              colors={['#f8f9fa', '#f0f0f0']}
+              style={styles.modalHeader}
+            >
+              <Text style={styles.modalTitle}>Edit Vehicle Details</Text>
+              <TouchableOpacity 
+                onPress={() => setEditModalVisible(false)}
+                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={22} color="#333" />
               </TouchableOpacity>
-            </View>
+            </LinearGradient>
 
             {/* Scrollable Form */}
             <ScrollView
@@ -254,12 +400,13 @@ const VehicleManagementScreen = () => {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Vehicle Type</Text>
                 <View style={styles.inputContainer}>
-                  <MaterialCommunityIcons name="truck-outline" size={20} color="#999" style={styles.inputIcon} />
+                  <MaterialCommunityIcons name="truck-outline" size={20} color={BRAND_COLOR} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="e.g. Truck"
                     value={editForm.type}
                     onChangeText={(text) => handleEditChange('type', text)}
+                    placeholderTextColor="#aaa"
                   />
                 </View>
               </View>
@@ -267,13 +414,14 @@ const VehicleManagementScreen = () => {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Capacity (kg)</Text>
                 <View style={styles.inputContainer}>
-                  <MaterialCommunityIcons name="weight" size={20} color="#999" style={styles.inputIcon} />
+                  <MaterialCommunityIcons name="weight" size={20} color={BRAND_COLOR} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="e.g. 1000"
                     keyboardType="numeric"
                     value={editForm.capacity}
                     onChangeText={(text) => handleEditChange('capacity', text)}
+                    placeholderTextColor="#aaa"
                   />
                 </View>
               </View>
@@ -281,12 +429,13 @@ const VehicleManagementScreen = () => {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Plate Number</Text>
                 <View style={styles.inputContainer}>
-                  <Ionicons name="card-outline" size={20} color="#999" style={styles.inputIcon} />
+                  <Ionicons name="card-outline" size={20} color={BRAND_COLOR} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="e.g. BA 2 PA 1234"
                     value={editForm.plate}
                     onChangeText={(text) => handleEditChange('plate', text)}
+                    placeholderTextColor="#aaa"
                   />
                 </View>
               </View>
@@ -294,12 +443,13 @@ const VehicleManagementScreen = () => {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>License Number</Text>
                 <View style={styles.inputContainer}>
-                  <Ionicons name="document-text-outline" size={20} color="#999" style={styles.inputIcon} />
+                  <Ionicons name="document-text-outline" size={20} color={BRAND_COLOR} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Transport license ID"
                     value={editForm.license}
                     onChangeText={(text) => handleEditChange('license', text)}
+                    placeholderTextColor="#aaa"
                   />
                 </View>
               </View>
@@ -307,12 +457,13 @@ const VehicleManagementScreen = () => {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Insurance (optional)</Text>
                 <View style={styles.inputContainer}>
-                  <Ionicons name="shield-checkmark-outline" size={20} color="#999" style={styles.inputIcon} />
+                  <Ionicons name="shield-checkmark-outline" size={20} color={BRAND_COLOR} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Insurance Number"
                     value={editForm.insurance}
                     onChangeText={(text) => handleEditChange('insurance', text)}
+                    placeholderTextColor="#aaa"
                   />
                 </View>
               </View>
@@ -323,15 +474,24 @@ const VehicleManagementScreen = () => {
               <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setEditModalVisible(false)}
+                activeOpacity={0.7}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.saveButton}
+                activeOpacity={0.8}
                 onPress={handleEditSubmit}
               >
-                <Text style={styles.saveButtonText}>Save Changes</Text>
+                <LinearGradient
+                  colors={[BRAND_COLOR, `${BRAND_COLOR}DD`]}
+                  style={styles.saveButton}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Ionicons name="save-outline" size={18} color="#fff" style={{marginRight: 8}} />
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -358,37 +518,62 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  headerTitleContainer: {
+    alignItems: 'center',
+  },
+  title: { 
+    fontSize: 18, 
+    fontWeight: '700', 
+    color: '#333',
+  },
+  subtitle: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
   },
   refreshButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  title: { 
-    fontSize: 18, 
-    fontWeight: '600', 
-    color: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff',
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: 16,
     color: '#666',
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '500',
   },
   listContainer: {
     padding: 16,
@@ -397,87 +582,138 @@ const styles = StyleSheet.create({
   vehicleCard: { 
     backgroundColor: '#fff', 
     borderRadius: 16, 
-    padding: 16, 
     marginBottom: 16,
-    flexDirection: 'row',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
   },
   vehicleIconContainer: {
     width: 50,
     height: 50,
     borderRadius: 12,
-    backgroundColor: '#f0f7ff',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  vehicleDetails: {
+  headerInfo: {
     flex: 1,
   },
-  vehicleHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
   vehicleText: { 
-    fontSize: 16, 
-    fontWeight: '600',
+    fontSize: 18, 
+    fontWeight: '700',
     color: '#333',
+    marginBottom: 4,
   },
   capacityBadge: {
-    backgroundColor: '#f0f7ff',
-    paddingHorizontal: 8,
+    backgroundColor: `${BRAND_COLOR}15`,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    alignSelf: 'flex-start',
   },
   capacityText: {
     fontSize: 12,
     fontWeight: '600',
     color: BRAND_COLOR,
   },
-  infoRow: {
+  divider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 16,
+  },
+  vehicleDetails: {
+    padding: 16,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  detailItem: {
+    width: '50%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingRight: 8,
+  },
+  detailIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: `${BRAND_COLOR}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 2,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  maintenanceStatusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    padding: 12,
+    borderRadius: 12,
+    flexWrap: 'wrap',
   },
-  infoIcon: {
-    marginRight: 6,
+  maintenanceStatusText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+    flex: 1,
   },
-  vehicleSub: { 
-    fontSize: 13, 
-    color: '#666',
+  maintainButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  maintainButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  maintainButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   actionButtons: {
-    justifyContent: 'space-between',
-    paddingLeft: 12,
+    flexDirection: 'row',
+  },
+  iconButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   editButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     backgroundColor: BRAND_COLOR,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
   },
   deleteButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#ff4757',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#FF3B30',
   },
   addButton: {
     position: 'absolute', 
     right: 20, 
     bottom: 30,
-    backgroundColor: BRAND_COLOR,
     width: 60,
     height: 60,
     borderRadius: 30, 
@@ -485,20 +721,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 40,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    margin: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: `${BRAND_COLOR}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#333',
-    marginTop: 16,
     marginBottom: 8,
   },
   emptySubText: {
@@ -506,12 +758,14 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
     marginBottom: 24,
+    lineHeight: 20,
   },
   emptyAddButton: {
-    backgroundColor: BRAND_COLOR,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   emptyAddButtonText: {
     color: '#fff',
@@ -528,32 +782,42 @@ const styles = StyleSheet.create({
     width: width * 0.9,
     maxHeight: '80%',
     backgroundColor: '#fff', 
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   modalTitle: { 
     fontSize: 18, 
-    fontWeight: '600', 
+    fontWeight: '700', 
     color: '#333',
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalScrollContent: {
     padding: 20,
-    // paddingBottom: 40,
   },
   formGroup: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   label: { 
-    fontWeight: '500', 
+    fontWeight: '600', 
     marginBottom: 8, 
     color: '#333',
     fontSize: 14,
@@ -572,9 +836,10 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingRight: 12,
     fontSize: 15,
+    color: '#333',
   },
   modalFooter: {
     flexDirection: 'row',
@@ -584,28 +849,31 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    marginRight: 8,
-    backgroundColor: '#f0f0f0',
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   cancelButtonText: {
     color: '#666',
     fontWeight: '600',
+    fontSize: 15,
   },
   saveButton: {
     flex: 2,
-    backgroundColor: BRAND_COLOR,
-    paddingVertical: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveButtonText: { 
     color: '#fff', 
     fontWeight: '600', 
-    fontSize: 16 
+    fontSize: 15 
   },
 });

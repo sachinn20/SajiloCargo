@@ -51,10 +51,22 @@ import VehicleOwnerEditProfileScreen from './screens/VehicleOwnerEditProfileScre
 import PaymentOptionsScreen from './screens/PaymentOptionsScreen';
 import KhaltiPaymentWebView from './screens/KhaltiPaymentWebView';
 
+
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { BRAND_COLOR } from './screens/config';
+import * as Linking from 'expo-linking';
 
+const linking = {
+  prefixes: ['sajilocargo://'],
+  config: {
+    screens: {
+      PaymentSuccess: 'payment-success',
+      PaymentFailure: 'payment-failure',
+      // You can add more if needed later
+    },
+  },
+};
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -119,7 +131,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PaperProvider>
         <SafeAreaProvider>
-          <NavigationContainer>
+          <NavigationContainer  linking={linking}>
             <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
               <Stack.Screen name="Splash" component={SplashScreen} />
               <Stack.Screen name="Onboarding" component={OnboardingScreen} />
@@ -163,7 +175,9 @@ export default function App() {
 
               <Stack.Screen name="PaymentOptions" component={PaymentOptionsScreen} />
               <Stack.Screen name="KhaltiPaymentWebView" component={KhaltiPaymentWebView} />
-              
+              <Stack.Screen name="PaymentSuccess" component={require('./screens/PaymentSuccessScreen').default} />
+              <Stack.Screen name="PaymentFailure" component={require('./screens/PaymentFailureScreen').default} />
+
 
 
             </Stack.Navigator>
