@@ -170,11 +170,10 @@ const ProfileScreen = ({ navigation }) => {
               iconColor="#2196F3"
             />
             <MenuItem 
-              icon="document-text" 
-              label="Statements & Reports" 
-              onPress={() => Alert.alert('Coming soon', 'This feature will be available soon.')} 
-              iconColor="#9C27B0"
-              isNew
+              icon="chatbubbles" 
+              label="Customer Support" 
+              onPress={() => navigation.navigate('CustomerSupport')} 
+              iconColor="#FF9800"
             />
           </View>
         </View>

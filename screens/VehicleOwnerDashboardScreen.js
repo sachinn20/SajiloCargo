@@ -217,19 +217,7 @@ const VehicleOwnerDashboardScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.performanceCard} activeOpacity={0.7}>
-          <View style={[styles.performanceIconContainer, { backgroundColor: '#ffe6e6' }]}>
-            <Ionicons name="bar-chart-outline" size={24} color="#ff4757" />
-          </View>
-          <View style={styles.performanceCardContent}>
-            <Text style={styles.cardTitle}>Performance</Text>
-            <Text style={styles.performanceValue}>98%</Text>
-            <Text style={styles.cardText}>completion rate</Text>
-            <View style={styles.performanceBar}>
-              <View style={[styles.performanceBarFill, { width: '98%' }]} />
-            </View>
-          </View>
-        </TouchableOpacity>
+        
 
         <View style={styles.quickActions}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -400,48 +388,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginLeft: 4,
-  },
-  performanceCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  
-  performanceIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  performanceCardContent: {
-    flex: 1,
-  },
-  performanceValue: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginVertical: 4,
-  },
-  performanceBar: {
-    height: 6,
-    width: '100%',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 3,
-    marginTop: 8,
-  },
-  performanceBarFill: {
-    height: 6,
-    backgroundColor: '#ff4757',
-    borderRadius: 3,
   },
   quickActions: {
     paddingHorizontal: 20,

@@ -118,16 +118,21 @@ const CustomerDashboardScreen = () => {
         <View style={styles.statsContainer}>
           <Text style={styles.sectionTitle}>What would you like to do?</Text>
           <View style={styles.grid}>
-            <TouchableOpacity style={styles.card} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.card}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('SupportBot')} // 👈 Link to chatbot screen
+            >
               <View style={[styles.iconContainer, { backgroundColor: '#e6f7ff' }]}>
                 <Ionicons name="headset" size={24} color={BRAND_COLOR} />
               </View>
               <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Customer Care</Text>
+                <Text style={styles.cardTitle}>Chat Bot</Text>
                 <Text style={styles.cardValue}>24/7</Text>
                 <Text style={styles.cardText}>Support available</Text>
               </View>
             </TouchableOpacity>
+
 
             <TouchableOpacity 
               style={styles.card} 
@@ -216,12 +221,7 @@ const CustomerDashboardScreen = () => {
               <Text style={styles.actionText}>Instant Book</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
-              <View style={styles.actionIconContainer}>
-                <Ionicons name="help-circle-outline" size={24} color={BRAND_COLOR} />
-              </View>
-              <Text style={styles.actionText}>Help Center</Text>
-            </TouchableOpacity>
+            
           </View>
         </View>
       </ScrollView>
@@ -356,11 +356,13 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start', 
+    gap: 12, 
   },
+
   actionButton: {
     alignItems: 'center',
-    width: '30%',
+    width: 100, 
   },
   actionIconContainer: {
     width: 56,

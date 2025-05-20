@@ -134,6 +134,8 @@ const TripSearchScreen = ({ navigation }) => {
 
   const [pricePerKm, setPricePerKm] = useState(null);
   const [pricePerKg, setPricePerKg] = useState(null);
+  const GROUP_DISCOUNT_RATE = 0.8; // 20% discount for group shipments
+
 
   useEffect(() => {
     const fetchPricing = async () => {
@@ -153,29 +155,36 @@ const TripSearchScreen = ({ navigation }) => {
   useEffect(() => {
     const calculatePrice = async () => {
       if (!fromLocation || !toLocation || !weight) return;
-      
+
       try {
         const fromCoords = await getCoordinates(fromLocation);
         const toCoords = await getCoordinates(toLocation);
-        
+
         if (!fromCoords || !toCoords) return;
-        
+
         const calculatedDistance = haversineDistance(fromCoords, toCoords);
         setDistance(calculatedDistance);
-        
+
         const parsedWeight = parseFloat(weight);
         const baseRatePerKm = pricePerKm || 0;
         const weightRate = pricePerKg || 0;
 
-        const calculatedAmount = Math.round(baseRatePerKm * calculatedDistance + weightRate * parsedWeight);
-        setAmount(String(calculatedAmount));
+        let calculatedAmount = baseRatePerKm * calculatedDistance + weightRate * parsedWeight;
+
+        // 👇 Apply discount if shipmentType is "group"
+        if (shipmentType === 'group') {
+          calculatedAmount *= GROUP_DISCOUNT_RATE;
+        }
+
+        setAmount(String(Math.round(calculatedAmount)));
       } catch (err) {
         console.log('Error calculating price:', err);
       }
     };
-    
+
     calculatePrice();
-  }, [fromLocation, toLocation, weight]);
+  }, [fromLocation, toLocation, weight, shipmentType]);
+
 
   const handleSearch = async () => {
     if (!fromLocation || !toLocation || !date || !shipmentType || !weight) {
@@ -199,8 +208,15 @@ const TripSearchScreen = ({ navigation }) => {
       const weightRate = pricePerKg || 0;
 
 
-      const calculatedAmount = Math.round(baseRatePerKm * distance + weightRate * parsedWeight);
+      let calculatedAmount = baseRatePerKm * distance + weightRate * parsedWeight;
+
+      if (shipmentType === 'group') {
+        calculatedAmount *= GROUP_DISCOUNT_RATE;
+      }
+
+      calculatedAmount = Math.round(calculatedAmount);
       setAmount(String(calculatedAmount));
+
 
       const searchPayload = {
         from_location: fromLocation,
@@ -462,6 +478,12 @@ const TripSearchScreen = ({ navigation }) => {
                   <Text style={styles.priceValue}>
                     {amount ? `NPR ${amount}` : 'Will be calculated'}
                   </Text>
+                  {/* {shipmentType === 'group' && (
+                    <Text style={{ fontSize: 12, color: '#28a745', marginTop: 4 }}>
+                      Group shipment discount applied (20% off)
+                    </Text>
+                  )} */}
+
                   {distance && (
                     <Text style={styles.distanceText}>
                       Distance: {distance.toFixed(2)} km

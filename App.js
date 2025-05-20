@@ -51,6 +51,9 @@ import VehicleOwnerEditProfileScreen from './screens/VehicleOwnerEditProfileScre
 import PaymentOptionsScreen from './screens/PaymentOptionsScreen';
 import KhaltiPaymentWebView from './screens/KhaltiPaymentWebView';
 
+import CustomChat from './screens/CustomChat';
+import CustomerSupportScreen from './screens/CustomerSupportScreen';
+
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -177,6 +180,9 @@ export default function App() {
               <Stack.Screen name="KhaltiPaymentWebView" component={KhaltiPaymentWebView} />
               <Stack.Screen name="PaymentSuccess" component={require('./screens/PaymentSuccessScreen').default} />
               <Stack.Screen name="PaymentFailure" component={require('./screens/PaymentFailureScreen').default} />
+
+              <Stack.Screen name="SupportBot" component={CustomChat} />
+              <Stack.Screen name="CustomerSupport" component={CustomerSupportScreen} />
 
 
 
