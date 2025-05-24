@@ -56,8 +56,8 @@ const OpenStreetMapAutocomplete = ({ placeholder, onSelect }) => {
                 key={item.place_id}
                 style={styles.suggestion}
                 onPress={() => {
-                  onSelect(item.display_name);     // keep full name
-                  setQuery(item.display_name);     // show full name
+                  onSelect(item.display_name);     
+                  setQuery(item.display_name);     
                   setResults([]);
                 }}
                 
@@ -105,13 +105,15 @@ const AddTripScreen = ({ navigation }) => {
   }, []);
 
   const fetchVehicles = async () => {
-    try {
-      const response = await axios.get('/vehicles');
-      setVehicles(response.data);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to load vehicles.');
-    }
-  };
+  try {
+    const response = await axios.get('/vehicles');
+    const nonInstantVehicles = response.data.filter(vehicle => !vehicle.is_instant);
+    setVehicles(nonInstantVehicles);
+  } catch (error) {
+    Alert.alert('Error', 'Failed to load vehicles.');
+  }
+};
+
 
   const handleCreateTrip = async () => {
     if (!selectedVehicle || !fromLocation || !toLocation || !availableCapacity) {

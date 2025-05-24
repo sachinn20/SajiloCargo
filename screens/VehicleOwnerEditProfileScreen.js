@@ -105,7 +105,8 @@ const CustomerEditProfileScreen = ({ navigation }) => {
       });
 
       Alert.alert('Success', response.data.message || 'Profile updated.');
-      navigation.navigate('Cus');
+    navigation.navigate('OwnerDashboard', { screen: 'Profile' });
+
     } catch (err) {
       console.error('Update error:', err.response?.data || err);
       Alert.alert('Error', 'Failed to update profile.');
